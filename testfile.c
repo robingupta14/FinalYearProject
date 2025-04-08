@@ -1,1 +1,1 @@
-int main() { int c = 2; int arr[] = {1}; printf("%d", arr[c]);}
+int main() { int iamveryvulnerable = 2; int arr[] = {1}; printf("%d", arr[iamveryvulnerable]);}
