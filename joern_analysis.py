@@ -1,9 +1,9 @@
 import os
 import requests
 import tempfile
-import shutil
 from tqdm import tqdm
 import pandas as pd
+from pprint import pprint
 
 CWEs = ['79', '787', '89', '22']
 languages = ['c', 'cpp', 'cs', 'html', 'java', 'py', 'php']
@@ -12,77 +12,72 @@ JOERN_URL = "http://localhost:8080"
 
 def iter_dataset(dataset_root, CWEs, languages):
     for cwe in CWEs:
-        cwe_path = os.path.join(dataset_root, cwe)
-        for root, _, files in os.walk(cwe_path):
-            for file in files:
-                if not any(file.endswith(f".{ext}") for ext in languages):
-                    continue
-                
-                label = 'good' if file.startswith('good_') else 'bad'
-                parts = file.split('_')
-                
-                if len(parts) < 3:
-                    continue
-                
-                commit_id = parts[1]
-                file_id = parts[2].split('.')[0]
-                full_path = os.path.join(root, file)
-                
-                with open(full_path, 'r', errors='ignore') as f:
-                    source_code = f.read()
-                
-                yield {
-                    "cwe": cwe,
-                    "label": label,
-                    "commit_id": commit_id,
-                    "file_id": file_id,
-                    "path": full_path,
-                    "source_code": source_code,
-                }
+        cwe_path = os.path.join(dataset_root, "CWE-"+cwe)
+        for language in languages:
+            full_path = os.path.join(cwe_path, language)
+            for root, _, files in os.walk(full_path):
+                for file in files:                    
+                    label = 'good' if file.startswith('good_') else 'bad'
+                    parts = file.split('_')
+                    
+                    if len(parts) < 3:
+                        continue
+                    
+                    commit_id = parts[1]
+                    file_id = parts[2].split('.')[0]
+                    full_path = os.path.join(root, file)
+                    
+                    with open(full_path, 'r') as f:
+                        source_code = f.read()
 
+                    yield {
+                        "cwe": cwe,
+                        "label": label,
+                        "commit_id": commit_id,
+                        "file_id": file_id,
+                        "path": full_path,
+                        "source_code": source_code,
+                    }
+
+import os
+import tempfile
+import subprocess
 
 def run_joern_analysis(source_code):
     with tempfile.TemporaryDirectory() as tmpdir:
-        src_path = os.path.join(tmpdir, "file.c")
-        with open(src_path, "w") as f:
+        source_path = os.path.join(tmpdir, "file.c")
+        with open(source_path, "w") as f:
             f.write(source_code)
 
-        import_res = requests.post(f"{JOERN_URL}/importCode", json={"inputPath": tmpdir})
-        if import_res.status_code != 200:
-            return []
+        cpg_path = os.path.join(tmpdir, "cpg.bin")
 
-        cpg_id = import_res.json()["cpgId"]
+        # Step 1: Import code to generate CPG
+        subprocess.run([
+            "/home/robin/bin/joern/joern-cli/joern-scan",
+            "--input-path", tmpdir,
+            "--output-path", cpg_path
+        ], check=True)
 
-        requests.post(f"{JOERN_URL}/query", json={"cpgId": cpg_id, "query": "loadCweQueries()"})
-        
-        cwe_queries = [
-            "cwe120.findings.l",
-            "cwe78.findings.l",
-            "cwe89.findings.l",
-            "cwe79.findings.l",
-        ]
+        # Step 2: Run queries on CPG (you'll need to write a Joern query script for this)
+        query_script = os.path.join(tmpdir, "find_cwes.sc")
+        with open(query_script, "w") as f:
+            f.write("loadCweQueries()\ncwe120.findings.l\n")  # Example script
 
-        findings = []
-        for q in cwe_queries:
-            res = requests.post(f"{JOERN_URL}/query", json={"cpgId": cpg_id, "query": q})
-            if res.status_code == 200:
-                findings.extend(res.json())
+        result = subprocess.run([
+            "/home/robin/bin/joern/joern-cli/joern",
+            "--script", query_script,
+            "--params", f"cpgFile={cpg_path}"
+        ], capture_output=True, text=True)
 
-        return findings
+        print(result.stdout)
+        return result.stdout
+
 
 results = []
 
 for item in tqdm(iter_dataset(dataset_root, CWEs, languages)):
     findings = run_joern_analysis(item["source_code"])
-
-    results.append({
-        "cwe": item["cwe"],
-        "label": item["label"],
-        "commit_id": item["commit_id"],
-        "file_id": item["file_id"],
-        "path": item["path"],
-        "findings": findings,
-    })
+    results.append({"findings": findings})
 
 df = pd.DataFrame(results)
 df.to_csv("joern_analysis_results.csv", index=False)

@@ -29,11 +29,15 @@ EOF
 pip install -r requirements.txt
 
 echo "[*] Starting Joern server..."
-./joern/joern --server &
-
+/home/robin/bin/joern/joern-cli/joern --server > joern_server.log 2>&1 &
 JOERN_PID=$!
 echo "[*] Joern server running with PID $JOERN_PID"
-sleep 5
+
+echo "[*] Waiting for Joern server to be ready..."
+until curl -s http://localhost:8080 > /dev/null; do
+  sleep 1
+done
+echo "[*] Joern server is up."
 
 echo "[*] Running Python analysis..."
 python3 "$PYTHON_SCRIPT"
