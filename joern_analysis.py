@@ -50,18 +50,16 @@ def run_joern_analysis(source_code):
             f.write(source_code)
 
         cpg_path = os.path.join(tmpdir, "cpg.bin")
-
-        # Step 1: Import code to generate CPG
+ 
         subprocess.run([
             "/home/robin/bin/joern/joern-cli/joern-scan",
             "--input-path", tmpdir,
             "--output-path", cpg_path
         ], check=True)
-
-        # Step 2: Run queries on CPG (you'll need to write a Joern query script for this)
+ 
         query_script = os.path.join(tmpdir, "find_cwes.sc")
         with open(query_script, "w") as f:
-            f.write("loadCweQueries()\ncwe120.findings.l\n")  # Example script
+            f.write("loadCweQueries()\ncwe120.findings.l\n")  
 
         result = subprocess.run([
             "/home/robin/bin/joern/joern-cli/joern",
