@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -e
-DATASET_PATH="../Datasets/dataset_final_sorted"
 PYTHON_SCRIPT="semgrep_analysis.py"
 
 echo "[*] Installing Semgrep..."
@@ -21,4 +20,4 @@ semgrep login --token "$SEMGREP_APP_TOKEN"
 echo "[*] Running Semgrep analysis..."
 python3 "$PYTHON_SCRIPT"
 
-echo "[*] Analysis complete. Output saved to semgrep_analysis_results.csv"
+echo "[*] Analysis complete."
