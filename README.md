@@ -8,7 +8,7 @@ This project uses large language models to detect security vulnerabilities with 
    ```bash
    git clone <your-repo-url>
    cd <your-repo-directory>
-
+   ```
 2. **Install dependencies:**
    pip install -r requirements.txt
 
