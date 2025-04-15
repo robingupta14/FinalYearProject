@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -e
-DATASET_PATH="../Datasets/dataset_final_sorted"
 PYTHON_SCRIPT="semgrep_analysis.py"
 
 echo "[*] Installing Semgrep..."
@@ -11,9 +10,14 @@ else
     echo "[*] Semgrep already installed."
 fi
 
-SEMGREP_APP_TOKEN=bcb655c4d07ee63e5cae0352b42c0e9ff345f4003bb6920eb84a95c1750f5870 semgrep login
+if [[ -z "$SEMGREP_APP_TOKEN" ]]; then
+    echo "[!] SEMGREP_APP_TOKEN environment variable is not set. Exiting."
+    exit 1
+fi
+
+semgrep login --token "$SEMGREP_APP_TOKEN"
 
 echo "[*] Running Semgrep analysis..."
-python3 $PYTHON_SCRIPT
+python3 "$PYTHON_SCRIPT"
 
-echo "[*] Analysis complete. Output saved to semgrep_analysis_results.csv"
+echo "[*] Analysis complete."
