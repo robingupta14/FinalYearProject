@@ -31,9 +31,9 @@ This project uses large language models to detect security vulnerabilities with 
   ```
 
 3. Run the analysis script within the semgrep-analysis folder
-```bash
+   ```bash
    chmod +x run_analysis.sh
    ./run_analysis.sh
-```
+   ```
 
 Note: It's recommended to run all code on a Linux platform device, as you may run into compatability issues. Development was done on a windows machine using [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install).
