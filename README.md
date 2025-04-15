@@ -10,7 +10,9 @@ This project uses large language models to detect security vulnerabilities with 
    cd <your-repo-directory>
    ```
 2. **Install dependencies:**
+   ```bash
    pip install -r requirements.txt
+   ```
 
 3. Download the [CrossVul](https://dl.acm.org/doi/10.1145/3468264.3473122) dataset and place it in a folder named Datasets at the same directory level as this repository. The expected structure is:
 ```bash
