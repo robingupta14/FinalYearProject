@@ -4,6 +4,7 @@ import json
 import pandas as pd
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, accuracy_score
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 DATASET_ROOT = "../Datasets/dataset_final_sorted"
 ALLOWED_CWE_IDS = {"CWE-22", "CWE-79", "CWE-89", "CWE-787"}
@@ -18,12 +19,7 @@ benchmark = []
 
 def run_semgrep_on_file(file_path):
     try:
-        cmd = [
-            "semgrep",
-            "--config", "p/cwe-top-25",
-            "--json",
-            file_path
-        ]
+        cmd = ["semgrep", "--config", "p/cwe-top-25", "--json", file_path]
         proc = subprocess.run(cmd, capture_output=True, text=True)
         if proc.returncode != 0 and not proc.stdout.strip():
             return []
@@ -33,58 +29,72 @@ def run_semgrep_on_file(file_path):
         print(f"Failed on {file_path}: {e}")
         return []
 
+def process_file(cwe_dir, file_path):
+    label = "bad" if "bad" in file_path.lower() else "good"
+    findings = run_semgrep_on_file(file_path)
+
+    found_cwes = {
+        cwe for finding in findings
+        for cwe in ALLOWED_CWE_IDS
+        if cwe.lower() in finding.get("check_id", "").lower()
+    }
+
+    file_results = []
+    for finding in findings:
+        rule_id = finding.get("check_id", "")
+        file_results.append({
+            "file": file_path,
+            "line": finding.get("start", {}).get("line", -1),
+            "column": finding.get("start", {}).get("col", -1),
+            "message": finding.get("extra", {}).get("message", ""),
+            "severity": finding.get("extra", {}).get("severity", ""),
+            "rule_id": rule_id
+        })
+
+    if label == "bad":
+        if not found_cwes:
+            classification = "False Negative"
+        elif cwe_dir in found_cwes:
+            classification = "True Positive"
+        else:
+            classification = "False Negative"
+    else:
+        if not found_cwes:
+            classification = "True Negative"
+        else:
+            classification = "False Positive"
+
+    benchmark_entry = {
+        "file": file_path,
+        "label": label,
+        "expected_cwe": cwe_dir,
+        "found_cwes": list(found_cwes),
+        "classification": classification
+    }
+
+    return file_results, benchmark_entry
+
 def scan_dataset():
+    all_tasks = []
     for cwe_dir in ALLOWED_CWE_IDS:
         cwe_path = os.path.join(DATASET_ROOT, cwe_dir)
         for lang in LANGUAGES:
             lang_path = os.path.join(cwe_path, lang)
             if not os.path.exists(lang_path):
                 continue
-    
             for root, _, files in os.walk(lang_path):
-                for file in tqdm(files, desc=f"Scanning {lang_path}"):
+                for file in files:
                     file_path = os.path.join(root, file)
-                    label = "bad" if "bad" in file.lower() else "good"
+                    all_tasks.append((cwe_dir, file_path))
 
-                    findings = run_semgrep_on_file(file_path)
+    print(f"[+] Total files to scan: {len(all_tasks)}")
 
-                    found_cwes = {
-                        cwe for finding in findings 
-                        for cwe in ALLOWED_CWE_IDS 
-                        if cwe.lower() in finding.get("check_id", "").lower()
-                    }
-
-                    for finding in findings:
-                        rule_id = finding.get("check_id", "")
-                        results.append({
-                            "file": file_path,
-                            "line": finding.get("start", {}).get("line", -1),
-                            "column": finding.get("start", {}).get("col", -1),
-                            "message": finding.get("extra", {}).get("message", ""),
-                            "severity": finding.get("extra", {}).get("severity", ""),
-                            "rule_id": rule_id
-                        })
-
-                    if label == "bad":
-                        if not found_cwes:
-                            classification = "False Negative"
-                        elif cwe_dir in found_cwes:
-                            classification = "True Positive"
-                        else:
-                            classification = "False Negative"
-                    else:
-                        if not found_cwes:
-                            classification = "True Negative"
-                        else:
-                            classification = "False Positive"
-
-                    benchmark.append({
-                        "file": file_path,
-                        "label": label,
-                        "expected_cwe": cwe_dir,
-                        "found_cwes": list(found_cwes),
-                        "classification": classification
-                    })
+    with ThreadPoolExecutor(max_workers=16) as executor:
+        futures = [executor.submit(process_file, cwe, path) for cwe, path in all_tasks]
+        for future in tqdm(as_completed(futures), total=len(futures), desc="Running Semgrep in parallel"):
+            file_results, benchmark_entry = future.result()
+            results.extend(file_results)
+            benchmark.append(benchmark_entry)
 
     pd.DataFrame(results).to_csv(OUTPUT_CSV, index=False)
     print(f"[+] Findings saved to {OUTPUT_CSV}")
@@ -92,9 +102,7 @@ def scan_dataset():
     benchmark_df.to_csv(BENCHMARK_CSV, index=False)
     print(f"[+] Benchmark results saved to {BENCHMARK_CSV}")
 
-    y_true = [] 
-    y_pred = []
-
+    y_true, y_pred = [], []
     for row in benchmark_df.itertuples():
         if row.label == "bad":
             y_true.append(1)
@@ -122,10 +130,8 @@ def scan_dataset():
 
     print("\n=== Per-CWE Metrics ===")
     per_cwe_metrics = []
-
     for cwe in ALLOWED_CWE_IDS:
-        cwe_y_true = []
-        cwe_y_pred = []
+        cwe_y_true, cwe_y_pred = [], []
         for row in benchmark_df.itertuples():
             if row.expected_cwe != cwe:
                 continue
@@ -135,10 +141,8 @@ def scan_dataset():
             else:
                 cwe_y_true.append(0)
                 cwe_y_pred.append(0 if not row.found_cwes else 1)
-
         if not cwe_y_true:
             continue
-
         cwe_precision = precision_score(cwe_y_true, cwe_y_pred, zero_division=0)
         cwe_recall = recall_score(cwe_y_true, cwe_y_pred, zero_division=0)
         cwe_f1 = f1_score(cwe_y_true, cwe_y_pred, zero_division=0)
@@ -157,9 +161,9 @@ def scan_dataset():
             "F1": cwe_f1,
             "Accuracy": cwe_accuracy
         })
-        
-    pd.DataFrame(per_cwe_metrics).to_csv("semgrep_per_cwe_metrics.csv", index=False)
-    print("[+] Per-CWE metrics saved to semgrep_per_cwe_metrics.csv")
+
+    pd.DataFrame(per_cwe_metrics).to_csv(METRICS_CSV, index=False)
+    print(f"[+] Per-CWE metrics saved to {METRICS_CSV}")
 
 if __name__ == "__main__":
     scan_dataset()
