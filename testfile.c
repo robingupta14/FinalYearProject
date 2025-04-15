@@ -1,1 +1,13 @@
-int main() { int iamveryvulnerable = 2; int arr[] = {1}; printf("%d", arr[iamveryvulnerable]);}
+#include <string.h>
+#include <stdio.h>
+
+void vulnerable_function() {
+    char buffer[10];
+    strcpy(buffer, "thisiswaytoolong");
+    printf("Buffer: %s\n", buffer);
+}
+
+int main() {
+    vulnerable_function();
+    return 0;
+}
