@@ -10,12 +10,7 @@ else
     echo "[*] Semgrep already installed."
 fi
 
-if [[ -z "$SEMGREP_APP_TOKEN" ]]; then
-    echo "[!] SEMGREP_APP_TOKEN environment variable is not set. Exiting."
-    exit 1
-fi
-
-semgrep login --token "$SEMGREP_APP_TOKEN"
+SEMGREP_APP_TOKEN=bcb655c4d07ee63e5cae0352b42c0e9ff345f4003bb6920eb84a95c1750f5870 semgrep login
 
 echo "[*] Running Semgrep analysis..."
 python3 "$PYTHON_SCRIPT"
