@@ -26,9 +26,9 @@ This project uses large language models to detect security vulnerabilities with 
 1. This project uses [Semgrep's CWE Top 25 ruleset](https://semgrep.dev/p/cwe-top-25) which has Pro rules that require authentication. Create a free Semgrep account to obtain a token.
 
 2. Authenticate Semgrep:
-  ```bash
-  export SEMGREP_APP_TOKEN=your_token_here
-  ```
+     ```bash
+     export SEMGREP_APP_TOKEN=your_token_here
+     ```
 
 3. Run the analysis script within the semgrep-analysis folder
    ```bash
