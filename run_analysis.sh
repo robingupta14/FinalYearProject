@@ -1,48 +1,19 @@
 #!/bin/bash
 
 set -e
-JOERN_VERSION="1.1.114"
-JOERN_URL="https://github.com/joernio/joern/releases/download/v$JOERN_VERSION/joern-install.sh"
 DATASET_PATH="../Datasets/dataset_final_sorted"
-PYTHON_SCRIPT="joern_analysis.py"
+PYTHON_SCRIPT="semgrep_analysis.py"
 
-echo "[*] Installing Joern..."
-if [ ! -d "joern" ]; then
-    wget "$JOERN_URL" -O joern-install.sh
-    chmod +x joern-install.sh
-    ./joern-install.sh
+echo "[*] Installing Semgrep..."
+if ! command -v semgrep &> /dev/null; then
+    pip install semgrep
 else
-    echo "[*] Joern already installed."
+    echo "[*] Semgrep already installed."
 fi
 
-echo "[*] Creating Python virtual environment..."
-python3 -m venv venv
-source venv/bin/activate
+SEMGREP_APP_TOKEN=bcb655c4d07ee63e5cae0352b42c0e9ff345f4003bb6920eb84a95c1750f5870 semgrep login
 
-echo "[*] Installing Python dependencies..."
-cat << EOF > requirements.txt
-requests>=2.28.0
-tqdm>=4.64.0
-pandas>=1.5.0
-EOF
+echo "[*] Running Semgrep analysis..."
+python3 $PYTHON_SCRIPT
 
-pip install -r requirements.txt
-
-echo "[*] Starting Joern server..."
-/home/robin/bin/joern/joern-cli/joern --server > joern_server.log 2>&1 &
-JOERN_PID=$!
-echo "[*] Joern server running with PID $JOERN_PID"
-
-echo "[*] Waiting for Joern server to be ready..."
-until curl -s http://localhost:8080 > /dev/null; do
-  sleep 1
-done
-echo "[*] Joern server is up."
-
-echo "[*] Running Python analysis..."
-python3 "$PYTHON_SCRIPT"
-
-echo "[*] Killing Joern server..."
-kill $JOERN_PID
-
-echo "[*] Analysis complete. Output saved to joern_analysis_results.csv"
+echo "[*] Analysis complete. Output saved to semgrep_analysis_results.csv"
