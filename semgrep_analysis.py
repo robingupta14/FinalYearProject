@@ -18,14 +18,13 @@ results = []
 benchmark = []
 
 def run_semgrep_on_file(file_path):
-    try:
-        # see: https://semgrep.dev/p/cwe-top-25
-        cmd = ["semgrep", "--config", "p/cwe-top-25", "--json", file_path]
-        proc = subprocess.run(cmd, capture_output=True, text=True)
-        if proc.returncode != 0 and not proc.stdout.strip():
-            return []
-        json_output = json.loads(proc.stdout)
-        return json_output.get("results", [])
+    # see: https://semgrep.dev/p/cwe-top-25
+    cmd = ["semgrep", "--config", "p/cwe-top-25", "--json", file_path]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0 and not proc.stdout.strip():
+        return []
+    json_output = json.loads(proc.stdout)
+    return json_output.get("results", [])
 
 def process_file(cwe_dir, file_path):
     ground_truth_label = "bad" if "bad" in file_path.lower() else "good"
@@ -40,6 +39,8 @@ def process_file(cwe_dir, file_path):
     file_results = []
     for finding in findings:
         rule_id = finding.get("check_id", "")
+
+        # Just for debugging and sanity checking the benchmarks, these values aren't actually very useful.
         file_results.append({
             "file": file_path,
             "line": finding.get("start", {}).get("line", -1),
@@ -73,6 +74,9 @@ def process_file(cwe_dir, file_path):
     return file_results, benchmark_entry
 
 def scan_dataset():
+
+    
+    # Collect all the relevant files for all CWEs and language combinations we're interested in
     all_tasks = []
     for cwe_dir in ALLOWED_CWE_IDS:
         cwe_path = os.path.join(DATASET_ROOT, cwe_dir)
@@ -84,9 +88,9 @@ def scan_dataset():
                 for file in files:
                     file_path = os.path.join(root, file)
                     all_tasks.append((cwe_dir, file_path))
-
     print(f"[+] Total files to scan: {len(all_tasks)}")
 
+    # Parallelized semgrep analysis and results computation
     with ThreadPoolExecutor(max_workers=16) as executor:
         futures = [executor.submit(process_file, cwe, path) for cwe, path in all_tasks]
         for future in tqdm(as_completed(futures), total=len(futures), desc="Running Semgrep in parallel"):
