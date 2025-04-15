@@ -15,11 +15,12 @@ This project uses large language models to detect security vulnerabilities with 
    ```
 
 3. Download the [CrossVul](https://dl.acm.org/doi/10.1145/3468264.3473122) dataset and place it in a folder named Datasets at the same directory level as this repository. The expected structure is:
-```bash
-    parent-directory/
-    ├── this-repo/
-    └── Datasets/
-        └── crossvul/
+   ```bash
+       parent-directory/
+       ├── this-repo/
+       └── Datasets/
+           └── crossvul/
+   ```
 
 # Running the Semgrep Analysis:
 1. This project uses [Semgrep's CWE Top 25 ruleset](https://semgrep.dev/p/cwe-top-25) which has Pro rules that require authentication. Create a free Semgrep account to obtain a token.
