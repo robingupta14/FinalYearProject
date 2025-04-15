@@ -19,18 +19,16 @@ benchmark = []
 
 def run_semgrep_on_file(file_path):
     try:
+        # see: https://semgrep.dev/p/cwe-top-25
         cmd = ["semgrep", "--config", "p/cwe-top-25", "--json", file_path]
         proc = subprocess.run(cmd, capture_output=True, text=True)
         if proc.returncode != 0 and not proc.stdout.strip():
             return []
         json_output = json.loads(proc.stdout)
         return json_output.get("results", [])
-    except Exception as e:
-        print(f"Failed on {file_path}: {e}")
-        return []
 
 def process_file(cwe_dir, file_path):
-    label = "bad" if "bad" in file_path.lower() else "good"
+    ground_truth_label = "bad" if "bad" in file_path.lower() else "good"
     findings = run_semgrep_on_file(file_path)
 
     found_cwes = {
@@ -51,7 +49,7 @@ def process_file(cwe_dir, file_path):
             "rule_id": rule_id
         })
 
-    if label == "bad":
+    if ground_truth_label == "bad":
         if not found_cwes:
             classification = "False Negative"
         elif cwe_dir in found_cwes:
@@ -66,7 +64,7 @@ def process_file(cwe_dir, file_path):
 
     benchmark_entry = {
         "file": file_path,
-        "label": label,
+        "label": ground_truth_label,
         "expected_cwe": cwe_dir,
         "found_cwes": list(found_cwes),
         "classification": classification
