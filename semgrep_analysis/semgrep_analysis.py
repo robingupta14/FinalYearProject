@@ -7,7 +7,7 @@ from tqdm import tqdm
 from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, accuracy_score
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-DATASET_ROOT = "../../Datasets/dataset_final_sorted"
+DATASET_ROOT = "../../CrossVul"
 ALLOWED_CWE_IDS = {"CWE-22", "CWE-79", "CWE-89", "CWE-787"}
 LANGUAGES = ['c', 'cpp', 'cs', 'html', 'java', 'py', 'php']
 OUTPUT_CSV = "semgrep_filtered_results.csv"
@@ -88,9 +88,6 @@ def scan_dataset():
                 for file in files:
                     file_path = os.path.join(root, file)
                     all_tasks.append((cwe_dir, file_path))
-
-    shuffle(all_tasks)
-    all_tasks = all_tasks[3276:]
     print(f"[+] Total files to scan: {len(all_tasks)}")
 
     with ThreadPoolExecutor(max_workers=2) as executor:
