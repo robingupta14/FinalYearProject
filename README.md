@@ -18,8 +18,7 @@ This project uses large language models to detect security vulnerabilities with 
    ```bash
    parent-directory/
       ├── this-repo/
-      └── Datasets/
-        └── crossvul/
+      └── CrossVul/
    ```
 
 # Running the Semgrep Analysis:
