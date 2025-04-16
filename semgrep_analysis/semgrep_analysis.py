@@ -4,7 +4,7 @@ import json
 import pandas as pd
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, accuracy_score
-import csv
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 DATASET_ROOT = "../../Datasets/dataset_final_sorted"
 ALLOWED_CWE_IDS = {"CWE-22", "CWE-79", "CWE-89", "CWE-787"}
@@ -12,7 +12,10 @@ LANGUAGES = ['c', 'cpp', 'cs', 'html', 'java', 'py', 'php']
 OUTPUT_CSV = "semgrep_filtered_results.csv"
 BENCHMARK_CSV = "semgrep_benchmark_results.csv"
 CONF_MATRIX_CSV = "semgrep_confusion_matrix.csv"
-METRICS_CSV = "semgrep_per_cwe_metrics.csv"
+METRICS_CSV =  "semgrep_per_cwe_metrics.csv"
+
+results = []
+benchmark = []
 
 def run_semgrep_on_file(file_path):
     cmd = ["semgrep", "--config", "p/cwe-top-25", "--json", file_path]
@@ -68,43 +71,29 @@ def process_file(cwe_dir, file_path):
     return file_results, benchmark_entry
 
 def scan_dataset():
-    # Prepare CSV writers
-    with open(OUTPUT_CSV, mode="w", newline="") as findings_file, \
-         open(BENCHMARK_CSV, mode="w", newline="") as benchmark_file:
-
-        findings_writer = csv.DictWriter(findings_file, fieldnames=["file", "line", "column", "message", "severity", "rule_id"])
-        benchmark_writer = csv.DictWriter(benchmark_file, fieldnames=["file", "label", "expected_cwe", "found_cwes", "classification"])
-
-        findings_writer.writeheader()
-        benchmark_writer.writeheader()
-
-        all_tasks = []
-        for cwe_dir in ALLOWED_CWE_IDS:
-            cwe_path = os.path.join(DATASET_ROOT, cwe_dir)
-            for lang in LANGUAGES:
-                lang_path = os.path.join(cwe_path, lang)
-                if not os.path.exists(lang_path):
-                    continue
-                for root, _, files in os.walk(lang_path):
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        all_tasks.append((cwe_dir, file_path))
-        print(f"[+] Total files to scan: {len(all_tasks)}")
-
-        benchmark_entries = []
-
-        for cwe, path in tqdm(all_tasks, desc="Running Semgrep"):
-            file_results, benchmark_entry = process_file(cwe, path)
-
-            for res in file_results:
-                findings_writer.writerow(res)
-
-            benchmark_entry["found_cwes"] = json.dumps(benchmark_entry["found_cwes"])
-            benchmark_writer.writerow(benchmark_entry)
-            benchmark_entries.append(benchmark_entry)
-
-    benchmark_df = pd.DataFrame(benchmark_entries)
+  # Collect all the relevant files for all CWEs and language combinations we're interested in
+    all_tasks = []
+    for cwe_dir in ALLOWED_CWE_IDS:
+        cwe_path = os.path.join(DATASET_ROOT, cwe_dir)
+        for lang in LANGUAGES:
+            lang_path = os.path.join(cwe_path, lang)
+            if not os.path.exists(lang_path):
+                continue
+            for root, _, files in os.walk(lang_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    all_tasks.append((cwe_dir, file_path))
+    print(f"[+] Total files to scan: {len(all_tasks)}")
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(process_file, cwe, path) for cwe, path in all_tasks]
+        for future in tqdm(as_completed(futures), total=len(futures), desc="Running Semgrep in parallel"):
+            file_results, benchmark_entry = future.result()
+            results.extend(file_results)
+            benchmark.append(benchmark_entry)
+    pd.DataFrame(results).to_csv(OUTPUT_CSV, index=False)
     print(f"[+] Findings saved to {OUTPUT_CSV}")
+    benchmark_df = pd.DataFrame(benchmark)
+    benchmark_df.to_csv(BENCHMARK_CSV, index=False)
     print(f"[+] Benchmark results saved to {BENCHMARK_CSV}")
 
     y_true, y_pred = [], []
