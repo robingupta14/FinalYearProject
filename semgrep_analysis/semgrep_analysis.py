@@ -90,7 +90,7 @@ def scan_dataset():
                     all_tasks.append((cwe_dir, file_path))
     print(f"[+] Total files to scan: {len(all_tasks)}")
 
-    with ThreadPoolExecutor(max_workers=2) as executor:
+    with ThreadPoolExecutor(max_workers=32) as executor:
         futures = [executor.submit(process_file, cwe, path) for cwe, path in all_tasks]
         for future in tqdm(as_completed(futures), total=len(futures), desc="Running Semgrep in parallel"):
             file_results, benchmark_entry = future.result()
