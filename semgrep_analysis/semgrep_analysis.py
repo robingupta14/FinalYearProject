@@ -2,7 +2,6 @@ import os
 import subprocess
 import json
 import pandas as pd
-from random import shuffle
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, accuracy_score
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -19,32 +18,25 @@ results = []
 benchmark = []
 
 def run_semgrep_on_file(file_path):
-     try:
-         cmd = [
-             "semgrep",
-             "--config", "p/cwe-top-25",
-             "--json",
-             file_path
-         ]
-         proc = subprocess.run(cmd, capture_output=True, text=True)
-         if proc.returncode != 0 and not proc.stdout.strip():
-             return []
-         json_output = json.loads(proc.stdout)
-         return json_output.get("results", [])
-     except Exception as e:
-         print(f"Failed on {file_path}: {e}")
-         return []
- 
+    cmd = ["semgrep", "--config", "p/cwe-top-25", "--json", file_path]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0 and not proc.stdout.strip():
+        return []
+    json_output = json.loads(proc.stdout)
+    return json_output.get("results", [])
+
 def process_file(cwe_dir, file_path):
     ground_truth_label = "bad" if "bad" in file_path.lower() else "good"
     findings = run_semgrep_on_file(file_path)
 
-    file_results = []
-    found_cwes = False
+    found_cwes = {
+        cwe for finding in findings
+        for cwe in ALLOWED_CWE_IDS
+        if cwe.lower() in finding.get("check_id", "").lower()
+    }
 
+    file_results = []
     for finding in findings:
-        print(finding)
-        found_cwes = True
         rule_id = finding.get("check_id", "")
         file_results.append({
             "file": file_path,
@@ -56,27 +48,30 @@ def process_file(cwe_dir, file_path):
         })
 
     if ground_truth_label == "bad":
-        if not found_cwes:  # We DID have a CWE, but did not detect one 
+        if not found_cwes:
             classification = "False Negative"
-        else:               # We DID have a CWE, and did detect one
+        elif cwe_dir in found_cwes:
             classification = "True Positive"
-
+        else:
+            classification = "False Negative"
     else:
-        if not found_cwes:  # We did NOT have a CWE and did not detect one 
+        if not found_cwes:
             classification = "True Negative"
-        else:               # We did NOT have a CWE but did detect one 
+        else:
             classification = "False Positive"
 
     benchmark_entry = {
         "file": file_path,
         "label": ground_truth_label,
-        "cwe": cwe_dir,
+        "expected_cwe": cwe_dir,
+        "found_cwes": list(found_cwes),
         "classification": classification
     }
 
     return file_results, benchmark_entry
 
 def scan_dataset():
+  # Collect all the relevant files for all CWEs and language combinations we're interested in
     all_tasks = []
     for cwe_dir in ALLOWED_CWE_IDS:
         cwe_path = os.path.join(DATASET_ROOT, cwe_dir)
@@ -89,7 +84,6 @@ def scan_dataset():
                     file_path = os.path.join(root, file)
                     all_tasks.append((cwe_dir, file_path))
     print(f"[+] Total files to scan: {len(all_tasks)}")
-
     with ThreadPoolExecutor(max_workers=16) as executor:
         futures = [executor.submit(process_file, cwe, path) for cwe, path in all_tasks]
         for future in tqdm(as_completed(futures), total=len(futures), desc="Running Semgrep in parallel"):
@@ -103,7 +97,6 @@ def scan_dataset():
     print(f"[+] Benchmark results saved to {BENCHMARK_CSV}")
 
     y_true, y_pred = [], []
-
     for row in benchmark_df.itertuples():
         if row.label == "bad":
             y_true.append(1)
@@ -119,14 +112,14 @@ def scan_dataset():
     accuracy = accuracy_score(y_true, y_pred)
 
     print("\n=== Confusion Matrix ===")
-    print(pd.DataFrame(cm, index=["No CWE", "CWE"], columns=["Found no CWE", "Found CWE"]))
+    print(pd.DataFrame(cm, index=["Actual Good", "Actual Bad"], columns=["Predicted Good", "Predicted Bad"]))
     print("\n=== Metrics ===")
     print(f"Precision: {precision:.4f}")
     print(f"Recall:    {recall:.4f}")
     print(f"F1 Score:  {f1:.4f}")
     print(f"Accuracy:  {accuracy:.4f}")
 
-    pd.DataFrame(cm, index=["No CWE", "CWE"], columns=["Found no CWE", "Found CWE"]).to_csv(CONF_MATRIX_CSV)
+    pd.DataFrame(cm, index=["Actual Good", "Actual Bad"], columns=["Predicted Good", "Predicted Bad"]).to_csv(CONF_MATRIX_CSV)
     print(f"[+] Confusion matrix saved to {CONF_MATRIX_CSV}")
 
     print("\n=== Per-CWE Metrics ===")
@@ -134,14 +127,15 @@ def scan_dataset():
     for cwe in ALLOWED_CWE_IDS:
         cwe_y_true, cwe_y_pred = [], []
         for row in benchmark_df.itertuples():
-            if row.cwe != cwe:
+            if row.expected_cwe != cwe:
                 continue
+            found = json.loads(row.found_cwes)
             if row.label == "bad":
                 cwe_y_true.append(1)
-                cwe_y_pred.append(1 if row.classification == "True Positive" else 0)
+                cwe_y_pred.append(1 if cwe in found else 0)
             else:
                 cwe_y_true.append(0)
-                cwe_y_pred.append(0 if row.classification == "True Negative" else 1)
+                cwe_y_pred.append(0 if not found else 1)
         if not cwe_y_true:
             continue
         cwe_precision = precision_score(cwe_y_true, cwe_y_pred, zero_division=0)
