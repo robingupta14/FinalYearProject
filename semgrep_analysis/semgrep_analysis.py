@@ -87,6 +87,7 @@ def scan_dataset():
             for root, _, files in os.walk(lang_path):
                 for file in files:
                     file_path = os.path.join(root, file)
+                    all_tasks.append((cwe_dir, file_path))
 
     print(f"[+] Total files to scan: {len(all_tasks)}")
 
