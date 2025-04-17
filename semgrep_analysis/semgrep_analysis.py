@@ -8,8 +8,8 @@ from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 DATASET_ROOT = "../../CrossVul"
-ALLOWED_CWE_IDS = {"CWE-79"} #79
-LANGUAGES = ['php'] 
+ALLOWED_CWE_IDS = {"CWE-22", "CWE-79", "CWE-89", "CWE-787"}
+LANGUAGES = ['c', 'cpp', 'cs', 'html', 'java', 'py', 'php']
 OUTPUT_CSV = "semgrep_filtered_results.csv"
 BENCHMARK_CSV = "semgrep_benchmark_results.csv"
 CONF_MATRIX_CSV = "semgrep_confusion_matrix.csv"
@@ -87,8 +87,6 @@ def scan_dataset():
             for root, _, files in os.walk(lang_path):
                 for file in files:
                     file_path = os.path.join(root, file)
-                    if ("bad" in file_path.lower()):
-                        all_tasks.append((cwe_dir, file_path))
 
     print(f"[+] Total files to scan: {len(all_tasks)}")
 
