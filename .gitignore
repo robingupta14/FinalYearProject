@@ -1,2 +1,4 @@
 venv
 semgrep_*.csv
+codebert_analysis/logs
+codebert_analysis/models
