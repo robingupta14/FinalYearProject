@@ -3,3 +3,6 @@ semgrep_*.csv
 codebert_analysis/logs
 codebert_analysis/models
 codebert_analysis/tmp/
+vulberta_analysis/logs
+vulberta_analysis/models
+vulberta_analysis/tmp/
