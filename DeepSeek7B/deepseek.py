@@ -167,12 +167,6 @@ def tokenize_example(batch, cwe_id, max_length=16384):
         "filename": filenames_list
     }
 
-dataloader_config = DataLoaderConfiguration(
-    dispatch_batches=None,
-    split_batches=False,
-    even_batches=True,
-    use_seedable_sampler=True
-)
 accelerator = Accelerator()
 model = model.to(accelerator.device)
 
@@ -222,8 +216,7 @@ for cwe_id in ALLOWED_CWE_IDS:
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         compute_metrics=compute_file_metrics_builder(eval_dataset["filename"]),
-        optimizers=(optimizer, scheduler),
-        dataloader_config=dataloader_config  
+        optimizers=(optimizer, scheduler)
     )
 
     trainer.train()
