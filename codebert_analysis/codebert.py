@@ -170,51 +170,6 @@ for cwe_id in ALLOWED_CWE_IDS:
     trainer.train()
     trainer.save_model(model_path)
 
-    def predict_with_chunk_voting(trainer, raw_samples, chunk_size=512, stride=256):
-    true_labels = []
-    pred_labels = []
-
-    for example in tqdm(raw_samples, desc="Evaluating with chunk voting"):
-        label = example["label"]
-        true_labels.append(label)
-
-        tokens = tokenizer(example["code"], return_attention_mask=True, truncation=False)
-        input_ids = tokens["input_ids"]
-        attention_mask = tokens["attention_mask"]
-
-        chunks = []
-        for i in range(0, len(input_ids), stride):
-            chunk_ids = input_ids[i:i + chunk_size]
-            chunk_mask = attention_mask[i:i + chunk_size]
-
-            chunks.append({
-                "input_ids": chunk_ids,
-                "attention_mask": chunk_mask,
-            })
-
-        if not chunks:
-            pred_labels.append(0)
-            continue
-
-        max_len = max(len(c["input_ids"]) for c in chunks)
-        for chunk in chunks:
-            pad_len = max_len - len(chunk["input_ids"])
-            chunk["input_ids"] += [tokenizer.pad_token_id] * pad_len
-            chunk["attention_mask"] += [0] * pad_len
-
-        input_ids = torch.tensor([c["input_ids"] for c in chunks]).to(trainer.model.device)
-        attention_mask = torch.tensor([c["attention_mask"] for c in chunks]).to(trainer.model.device)
-
-        with torch.no_grad():
-            outputs = trainer.model(input_ids=input_ids, attention_mask=attention_mask)
-            logits = outputs.logits
-            preds = torch.argmax(logits, dim=1).cpu().numpy()
-
-        file_pred = 1 if (preds.mean() > 0.2) else 0
-        pred_labels.append(file_pred)
-
-    return true_labels, pred_labels
-
 def predict_with_chunk_voting(trainer, raw_samples, chunk_size=512, stride=256):
     true_labels = []
     pred_labels = []
