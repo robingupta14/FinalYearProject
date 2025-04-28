@@ -44,7 +44,6 @@ tee = Tee(logfile_path)
 
 
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
 DATASET_ROOT = "../../CrossVul"
 ALLOWED_CWE_IDS = {"CWE-22"} # "CWE-22", "CWE-89", "CWE-787"
 LANGUAGES = ['c', 'cpp', 'cs', 'html', 'java', 'py', 'php']
