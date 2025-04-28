@@ -10,6 +10,7 @@ import numpy as np
 from collections import defaultdict
 from tqdm import tqdm
 from torch.cuda.amp import autocast
+from accelerate import Accelerator, DataLoaderConfiguration
 
 import sys
 import os
@@ -166,8 +167,12 @@ def tokenize_example(batch, cwe_id, max_length=16384):
         "filename": filenames_list
     }
 
-
-from accelerate import Accelerator
+dataloader_config = DataLoaderConfiguration(
+    dispatch_batches=None,
+    split_batches=False,
+    even_batches=True,
+    use_seedable_sampler=True
+)
 accelerator = Accelerator()
 model = model.to(accelerator.device)
 
@@ -218,6 +223,7 @@ for cwe_id in ALLOWED_CWE_IDS:
         eval_dataset=eval_dataset,
         compute_metrics=compute_file_metrics_builder(eval_dataset["filename"]),
         optimizers=(optimizer, scheduler),
+        dataloader_config=dataloader_config  
     )
 
     trainer.train()
