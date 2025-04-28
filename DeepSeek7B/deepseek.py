@@ -1,4 +1,5 @@
-from transformers import AdamW, AutoTokenizer, AutoModelForCausalLM, AutoModelForSequenceClassification, Trainer, TrainingArguments, get_cosine_schedule_with_warmup
+from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSequenceClassification, Trainer, TrainingArguments, get_cosine_schedule_with_warmup
+from torch.optim import AdamW
 from tqdm import tqdm
 import torch
 import os
