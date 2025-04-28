@@ -1,0 +1,45 @@
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|#####     | 1/2 [00:10<00:10, 10.86s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:20<00:00, 10.27s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:20<00:00, 10.35s/it]
+Using device: cpu
+Model is loaded on device: cpu
+
+--- Training for CWE-22 ---
+320
+Map:   0%|          | 0/320 [00:00<?, ? examples/s]Map: 100%|##########| 320/320 [00:06<00:00, 52.91 examples/s]Map: 100%|##########| 320/320 [00:06<00:00, 52.33 examples/s]
+Training new model for CWE-22...
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 200, in <module>
+    training_args = TrainingArguments(
+                    ^^^^^^^^^^^^^^^^^^
+TypeError: TrainingArguments.__init__() got an unexpected keyword argument 'evaluation_strategy'
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|#####     | 1/2 [00:01<00:01,  1.64s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:03<00:00,  1.66s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:03<00:00,  1.66s/it]
+Using device: cpu
+Model is loaded on device: cpu
+
+--- Training for CWE-22 ---
+320
+Map:   0%|          | 0/320 [00:00<?, ? examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 58.57 examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 58.25 examples/s]
+Training new model for CWE-22...
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 214, in <module>
+    trainer = FileAwareTrainer(
+              ^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 69, in __init__
+    super().__init__(*args, **kwargs)
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/trainer.py", line 373, in __init__
+    self.create_accelerator_and_postprocess()
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/trainer.py", line 4252, in create_accelerator_and_postprocess
+    self.accelerator = Accelerator(
+                       ^^^^^^^^^^^^
+TypeError: Accelerator.__init__() got an unexpected keyword argument 'dispatch_batches'
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|#####     | 1/2 [00:03<00:03,  3.90s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:06<00:00,  3.40s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:06<00:00,  3.48s/it]
+Using device: cpu
+Model is loaded on device: cpu
+
+--- Training for CWE-22 ---
+320
+Map:   0%|          | 0/320 [00:00<?, ? examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 59.98 examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 59.64 examples/s]
+Training new model for CWE-22...
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/accelerate/accelerator.py:432: FutureWarning: Passing the following arguments to `Accelerator` is deprecated and will be removed in version 1.0 of Accelerate: dict_keys(['dispatch_batches', 'split_batches', 'even_batches', 'use_seedable_sampler']). Please pass an `accelerate.DataLoaderConfiguration` instead: 
+dataloader_config = DataLoaderConfiguration(dispatch_batches=None, split_batches=False, even_batches=True, use_seedable_sampler=True)
+  warnings.warn(
+  0%|          | 0/175 [00:00<?, ?it/s]
