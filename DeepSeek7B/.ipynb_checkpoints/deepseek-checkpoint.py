@@ -1,6 +1,5 @@
 from transformers import AdamW, AutoTokenizer, AutoModelForCausalLM, AutoModelForSequenceClassification, Trainer, TrainingArguments, get_cosine_schedule_with_warmup
 from tqdm import tqdm
-import torch
 import os
 from datasets import Dataset
 import random
@@ -9,36 +8,6 @@ import numpy as np
 from collections import defaultdict
 from tqdm import tqdm
 from torch.cuda.amp import autocast
-
-import sys
-import os
-
-class Tee(object):
-    def __init__(self, filename, mode="a"):
-        self.file = open(filename, mode)
-        self.stdout = sys.stdout
-        self.stderr = sys.stderr
-        sys.stdout = self
-        sys.stderr = self
-
-    def write(self, data):
-        self.file.write(data)
-        self.stdout.write(data)
-        self.flush()
-
-    def flush(self):
-        self.file.flush()
-        self.stdout.flush()
-
-    def close(self):
-        if self.file:
-            self.file.close()
-        sys.stdout = self.stdout
-        sys.stderr = self.stderr
-
-logfile_path = "./training_log.txt"
-tee = Tee(logfile_path)
-
 
 
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
@@ -282,4 +251,3 @@ print({
 
 print(f"\nConfusion Matrix for {cwe_id}:")
 print(confusion_matrix(true_labels, pred_labels))
-tee.close()
