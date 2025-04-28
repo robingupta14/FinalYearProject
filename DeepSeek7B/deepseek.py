@@ -51,16 +51,14 @@ LANGUAGES = ['c', 'cpp', 'cs', 'html', 'java', 'py', 'php']
 SEED = 42
 EPOCHS = 5
 
-
-torch.cuda.empty_cache()  
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
 
 #model_path = r"C:\Users\robpi\.cache\huggingface\hub\models--deepseek-ai--DeepSeek-R1-Distill-Qwen-7B\snapshots\916b56a44061fd5cd7d6a8fb632557ed4f724f60"
 # model_path = "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
 model_path = "/vol/bitbucket/rg721/models--deepseek-ai--DeepSeek-R1-Distill-Qwen-7B/snapshots/916b56a44061fd5cd7d6a8fb632557ed4f724f60"
 tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.float16, device_map=None, trust_remote_code=True)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Using device: {device}")
+model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.float16, device_map="auto", trust_remote_code=True)
 model = model.to(device)
 print(f"Model is loaded on device: {model.device}")
 
