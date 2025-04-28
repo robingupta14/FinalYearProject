@@ -16,7 +16,7 @@ ALLOWED_CWE_IDS = {"CWE-22"} # "CWE-22", "CWE-89", "CWE-787"
 LANGUAGES = ['c', 'cpp', 'cs', 'html', 'java', 'py', 'php']
 SEED = 42
 EPOCHS = 5
-codeBERT = "microsoft/codebert-base"
+codeBERT = "/vol/bitbucket/rg721/models--microsoft--codebert-base/snapshots/3b0952feddeffad0063f274080e3c23d75e7eb39"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 tokenizer = AutoTokenizer.from_pretrained(codeBERT, trust_remote_code=True)
 print(device)

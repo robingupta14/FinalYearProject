@@ -42,4 +42,30 @@ Training new model for CWE-22...
 /vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/accelerate/accelerator.py:432: FutureWarning: Passing the following arguments to `Accelerator` is deprecated and will be removed in version 1.0 of Accelerate: dict_keys(['dispatch_batches', 'split_batches', 'even_batches', 'use_seedable_sampler']). Please pass an `accelerate.DataLoaderConfiguration` instead: 
 dataloader_config = DataLoaderConfiguration(dispatch_batches=None, split_batches=False, even_batches=True, use_seedable_sampler=True)
   warnings.warn(
+  0%|          | 0/175 [00:00<?, ?it/s]Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|#####     | 1/2 [00:10<00:10, 10.55s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:18<00:00,  8.85s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:18<00:00,  9.11s/it]
+Using device: cpu
+Model is loaded on device: cpu
+
+--- Training for CWE-22 ---
+320
+Map:   0%|          | 0/320 [00:00<?, ? examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 60.76 examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 60.39 examples/s]
+Training new model for CWE-22...
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 219, in <module>
+    trainer = FileAwareTrainer(
+              ^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 70, in __init__
+    super().__init__(*args, **kwargs)
+TypeError: Trainer.__init__() got an unexpected keyword argument 'dataloader_config'
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|#####     | 1/2 [00:01<00:01,  1.57s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:02<00:00,  1.33s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:02<00:00,  1.36s/it]
+Using device: cpu
+Model is loaded on device: cpu
+
+--- Training for CWE-22 ---
+320
+Map:   0%|          | 0/320 [00:00<?, ? examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 60.56 examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 60.22 examples/s]
+Training new model for CWE-22...
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/accelerate/accelerator.py:432: FutureWarning: Passing the following arguments to `Accelerator` is deprecated and will be removed in version 1.0 of Accelerate: dict_keys(['dispatch_batches', 'split_batches', 'even_batches', 'use_seedable_sampler']). Please pass an `accelerate.DataLoaderConfiguration` instead: 
+dataloader_config = DataLoaderConfiguration(dispatch_batches=None, split_batches=False, even_batches=True, use_seedable_sampler=True)
+  warnings.warn(
   0%|          | 0/175 [00:00<?, ?it/s]
