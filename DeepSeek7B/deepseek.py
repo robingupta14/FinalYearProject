@@ -1,5 +1,6 @@
 from transformers import AdamW, AutoTokenizer, AutoModelForCausalLM, AutoModelForSequenceClassification, Trainer, TrainingArguments, get_cosine_schedule_with_warmup
 from tqdm import tqdm
+import torch
 import os
 from datasets import Dataset
 import random
