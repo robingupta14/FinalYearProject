@@ -212,7 +212,7 @@ for cwe_id in ALLOWED_CWE_IDS:
             batch = {k: v.to(accelerator.device) for k, v in batch.items()}
             with autocast():
                 if 'label' in batch:
-                    batch['labels'] = batch.pop('label')
+                    batch['labels'] = batch['label']
                 outputs = model(**batch)
             accelerator.backward(outputs.loss)
             optimizer.step()
@@ -228,7 +228,7 @@ for cwe_id in ALLOWED_CWE_IDS:
             for batch in tqdm(accelerator.prepare(eval_loader)):
                 batch = {k: v.to(accelerator.device) for k, v in batch.items()}
                 if 'label' in batch:
-                    batch['labels'] = batch.pop('label')
+                    batch['labels'] = batch['label']
                 outputs = model(**batch)
                 all_preds.append(outputs.logits.squeeze(-1))
                 all_labels.append(batch["label"])
