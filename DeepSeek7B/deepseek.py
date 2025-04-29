@@ -244,6 +244,15 @@ for cwe_id in ALLOWED_CWE_IDS:
         print(f"Found existing model at {model_dir}. Loading...")
         model = CausalLMWithClassifier.from_pretrained(model_dir)
         model = model.to(accelerator.device)
+
+        trainer = FileAwareTrainer(
+            model=model,
+            args=training_args,
+            train_dataset=train_dataset,
+            eval_dataset=eval_dataset,
+            compute_metrics=compute_file_metrics_builder(eval_dataset["filename"]),
+            optimizers=(optimizer, scheduler)
+        )   
         continue 
     else:
         print(f"No existing model found at {model_dir}. Finetuning...")
