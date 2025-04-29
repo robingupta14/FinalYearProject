@@ -223,12 +223,22 @@ accelerator = Accelerator()
 model = model.to(accelerator.device)
 
 for cwe_id in ALLOWED_CWE_IDS:
-    print(f"\n--- Training for {cwe_id} ---")
+    print(f"\n--- Processing for {cwe_id} ---")
+    model_dir = f"./models/vulberta_{cwe_id}"
+
+    if os.path.exists(model_dir):
+        print(f"Found existing model at {model_dir}. Loading...")
+        model = CausalLMWithClassifier.from_pretrained(model_dir)
+        model = model.to(accelerator.device)
+        continue  # Skip training
+    else:
+        print(f"No existing model found at {model_dir}. Finetuning...")
+
+    # Collect and tokenize data
     samples = collect_files_for_cwe(cwe_id)
-    
     random.seed(SEED)
     random.shuffle(samples)
-    
+
     raw_dataset = Dataset.from_list(samples)
     tokenized_dataset = raw_dataset.map(
         tokenize_example, 
@@ -236,20 +246,28 @@ for cwe_id in ALLOWED_CWE_IDS:
         remove_columns=["filename", "code"], 
         fn_kwargs={"cwe_id": cwe_id}
     )
-    
     tokenized_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'label', 'filename'])
     train_test = tokenized_dataset.train_test_split(test_size=0.2, seed=SEED)
     train_dataset = train_test["train"]
     eval_dataset = train_test["test"]
-    
-    print(f"Training new model for {cwe_id}...")
+
+    # Re-initialize model (to avoid weight sharing between CWEs)
+    base_model = Qwen2ForCausalLM.from_pretrained(
+        model_path,
+        torch_dtype=torch.float16,
+        device_map="auto",
+        trust_remote_code=True
+    )
+    model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2)
+    model = model.to(accelerator.device)
+
     optimizer = AdamW(model.parameters(), lr=2e-5, weight_decay=0.01)
     num_train_steps = len(train_dataset) * EPOCHS
     warmup_steps = int(0.1 * num_train_steps)
     scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps, num_training_steps=num_train_steps)
-    
+
     training_args = TrainingArguments(
-        output_dir=f"./models/vulberta_{cwe_id}",
+        output_dir=model_dir,
         eval_strategy="epoch",
         learning_rate=2e-5,
         per_device_train_batch_size=1,
@@ -263,7 +281,7 @@ for cwe_id in ALLOWED_CWE_IDS:
         metric_for_best_model="eval_loss",
         remove_unused_columns=False,
     )
-    
+
     trainer = FileAwareTrainer(
         model=model,
         args=training_args,
@@ -275,15 +293,11 @@ for cwe_id in ALLOWED_CWE_IDS:
 
     for param in model.base_model.parameters():
         param.requires_grad = False
-
     for param in model.classifier.parameters():
         param.requires_grad = True
 
     trainer.train()
-    trainer.save_model(f"./models/vulberta_{cwe_id}")
-    trainer.train()
-    trainer.save_model(f"./models/vulberta_{cwe_id}")
-
+    trainer.save_model(model_dir)
 
 def predict_with_chunk_voting(trainer, raw_samples, chunk_size=512, stride=256):
     true_labels = []
@@ -316,9 +330,10 @@ def predict_with_chunk_voting(trainer, raw_samples, chunk_size=512, stride=256):
             pad_len = max_len - len(chunk["input_ids"])
             chunk["input_ids"] += [tokenizer.pad_token_id] * pad_len
             chunk["attention_mask"] += [0] * pad_len
-
-        input_ids = torch.tensor([c["input_ids"] for c in chunks]).to(trainer.model.device)
-        attention_mask = torch.tensor([c["attention_mask"] for c in chunks]).to(trainer.model.device)
+            
+        device = next(trainer.model.parameters()).device
+        input_ids = torch.tensor([c["input_ids"] for c in chunks]).to(device)
+        attention_mask = torch.tensor([c["attention_mask"] for c in chunks]).to(device)
 
         with torch.no_grad():
             outputs = trainer.model(input_ids=input_ids, attention_mask=attention_mask)
