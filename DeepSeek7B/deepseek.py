@@ -136,35 +136,54 @@ def collect_files_for_cwe(cwe_id):
 
 def compute_file_metrics_builder(filenames):
     def compute_file_metrics(eval_pred):
-        logits, labels = eval_pred
-        preds = np.argmax(logits, axis=-1)
+        preds = eval_pred.predictions
+        labels = eval_pred.label_ids
 
-        file_pred_chunks = defaultdict(list)
-        file_label = {}
+        if isinstance(preds, np.ndarray) and preds.ndim > 1:
+            preds = np.argmax(preds, axis=-1)
+        preds = np.asarray(preds).flatten()
+        labels = np.asarray(labels).flatten()
 
+        global eval_filenames
+        if 'eval_filenames' not in globals():
+            raise ValueError("Global variable `eval_filenames` not set. Set it to list of filenames before eval.")
+
+        filenames = eval_filenames
+        if isinstance(filenames, str) or not hasattr(filenames, '__len__'):
+            filenames = [filenames]
+
+        if len(filenames) != len(preds):
+            raise ValueError(f"Mismatch: {len(filenames)=}, {len(preds)=}, {len(labels)=}")
+
+        metrics = []
         for pred, label, fname in zip(preds, labels, filenames):
-            file_pred_chunks[fname].append(pred)
-            file_label[fname] = label
+            metrics.append({
+                "filename": fname,
+                "prediction": int(pred),
+                "label": int(label),
+                "tp": int(pred == 1 and label == 1),
+                "fp": int(pred == 1 and label == 0),
+                "tn": int(pred == 0 and label == 0),
+                "fn": int(pred == 0 and label == 1),
+            })
 
-        final_preds, final_labels = [], []
-        for fname in file_pred_chunks:
-            final_labels.append(file_label[fname])
-            vulnerable_chunks = sum(1 for pred in file_pred_chunks[fname] if pred == 1)
-            if vulnerable_chunks / len(file_pred_chunks[fname]) >= 0.25:
-                final_preds.append(1)
-            else:
-                final_preds.append(0)
+        tp = sum(m["tp"] for m in metrics)
+        fp = sum(m["fp"] for m in metrics)
+        tn = sum(m["tn"] for m in metrics)
+        fn = sum(m["fn"] for m in metrics)
 
-        precision, recall, f1, _ = precision_recall_fscore_support(final_labels, final_preds, average='binary')
-        acc = accuracy_score(final_labels, final_preds)
+        precision = tp / (tp + fp + 1e-8)
+        recall = tp / (tp + fn + 1e-8)
+        f1 = 2 * precision * recall / (precision + recall + 1e-8)
+        accuracy = (tp + tn) / (tp + tn + fp + fn + 1e-8)
+
         return {
-            'accuracy': acc,
-            'precision': precision,
-            'recall': recall,
-            'f1': f1,
+            "accuracy": accuracy,
+            "precision": precision,
+            "recall": recall,
+            "f1": f1,
         }
 
-    return compute_file_metrics
 
 def tokenize_example(batch, cwe_id, max_length=16384):
     input_ids_list = []
