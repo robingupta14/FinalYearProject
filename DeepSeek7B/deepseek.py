@@ -11,9 +11,23 @@ from collections import defaultdict
 from tqdm import tqdm
 from torch.cuda.amp import autocast
 from accelerate import Accelerator, DataLoaderConfiguration
-
+import torch.nn as nn
 import sys
 import os
+from transformers import Qwen2ForCausalLM
+
+class CausalLMWithClassifier(nn.Module):
+    def __init__(self, base_model, hidden_size, num_labels=2):
+        super().__init__()
+        self.base_model = base_model
+        self.classifier = nn.Linear(hidden_size, num_labels)
+
+    def forward(self, input_ids, attention_mask=None):
+        outputs = self.base_model(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=True)
+
+        last_hidden_state = outputs.hidden_states[-1]
+        pooled = last_hidden_state[:, -1, :]
+        return self.classifier(pooled)
 
 class Tee(object):
     def __init__(self, filename, mode="a"):
@@ -53,12 +67,18 @@ EPOCHS = 5
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
-#model_path = r"C:\Users\robpi\.cache\huggingface\hub\models--deepseek-ai--DeepSeek-R1-Distill-Qwen-7B\snapshots\916b56a44061fd5cd7d6a8fb632557ed4f724f60"
-# model_path = "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
-model_path = "/vol/bitbucket/rg721/FinalYearProject/deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
-tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.float16, device_map="auto", trust_remote_code=True)
-model = model.to(device)
+
+model_path = "/vol/bitbucket/rg721/models--deepseek-ai--DeepSeek-R1-Distill-Qwen-7B/snapshots/916b56a44061fd5cd7d6a8fb632557ed4f724f60"
+
+base_model = Qwen2ForCausalLM.from_pretrained(
+    model_path,
+    torch_dtype=torch.float16,
+    device_map="auto",
+    trust_remote_code=True
+)
+hidden_size = base_model.config.hidden_size
+model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2).to("cuda")
+
 print(f"Model is loaded on device: {model.device}")
 
 
@@ -75,7 +95,6 @@ class FileAwareTrainer(Trainer):
     def predict(self, test_dataset, **kwargs):
         self.eval_dataset_filenames = test_dataset['filename']
         return super().predict(test_dataset, **kwargs)
-    
 
 def collect_files_for_cwe(cwe_id):
     samples = []
@@ -196,17 +215,15 @@ for cwe_id in ALLOWED_CWE_IDS:
     training_args = TrainingArguments(
         output_dir=f"./models/vulberta_{cwe_id}",
         evaluation_strategy="epoch",
-        learning_rate=2e-5, 
-        per_device_train_batch_size=4,
-        per_device_eval_batch_size=4,
-        gradient_accumulation_steps=2,
+        learning_rate=2e-5,
+        per_device_train_batch_size=8,
+        per_device_eval_batch_size=8,
         num_train_epochs=EPOCHS,
         weight_decay=0.01,
         save_strategy="epoch",
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
         remove_unused_columns=False,
-        bf16=True,
     )
     
     trainer = FileAwareTrainer(
@@ -217,19 +234,19 @@ for cwe_id in ALLOWED_CWE_IDS:
         compute_metrics=compute_file_metrics_builder(eval_dataset["filename"]),
         optimizers=(optimizer, scheduler)
     )
-    model.gradient_checkpointing_enable()
 
-    
     for param in model.base_model.parameters():
         param.requires_grad = False
 
     for param in model.classifier.parameters():
         param.requires_grad = True
 
-    for layer in model.base_model.encoder.layer[-10:]:
+    for layer in model.base_model.encoder.layer[-2:]:
         for param in layer.parameters():
             param.requires_grad = True
 
+    trainer.train()
+    trainer.save_model(f"./models/vulberta_{cwe_id}")
     trainer.train()
     trainer.save_model(f"./models/vulberta_{cwe_id}")
 

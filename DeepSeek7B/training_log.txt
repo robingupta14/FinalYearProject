@@ -310,3 +310,127 @@ Traceback (most recent call last):
   File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1688, in __getattr__
     raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 AttributeError: 'LlamaForCausalLM' object has no attribute 'classifier'
+Using device: cuda
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|#####     | 1/2 [00:02<00:02,  2.49s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:04<00:00,  2.32s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:04<00:00,  2.35s/it]
+Model is loaded on device: cuda:0
+
+--- Training for CWE-22 ---
+320
+Map:   0%|          | 0/320 [00:00<?, ? examples/s]Map: 100%|##########| 320/320 [00:04<00:00, 67.64 examples/s]Map: 100%|##########| 320/320 [00:04<00:00, 67.19 examples/s]
+Training new model for CWE-22...
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/training_args.py:1525: FutureWarning: `evaluation_strategy` is deprecated and will be removed in version 4.46 of 🤗 Transformers. Use `eval_strategy` instead
+  warnings.warn(
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 226, in <module>
+    for param in model.classifier.parameters():
+                 ^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1688, in __getattr__
+    raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+AttributeError: 'LlamaForCausalLM' object has no attribute 'classifier'
+Using device: cuda
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|#####     | 1/2 [00:02<00:02,  2.48s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:04<00:00,  2.15s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:04<00:00,  2.20s/it]
+Model is loaded on device: cuda:0
+
+--- Training for CWE-22 ---
+320
+Map:   0%|          | 0/320 [00:00<?, ? examples/s]Map: 100%|##########| 320/320 [00:04<00:00, 66.24 examples/s]Map: 100%|##########| 320/320 [00:04<00:00, 65.81 examples/s]
+Training new model for CWE-22...
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/training_args.py:1525: FutureWarning: `evaluation_strategy` is deprecated and will be removed in version 4.46 of 🤗 Transformers. Use `eval_strategy` instead
+  warnings.warn(
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 226, in <module>
+    for param in model.classifier.parameters():
+                 ^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1688, in __getattr__
+    raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+AttributeError: 'LlamaForSequenceClassification' object has no attribute 'classifier'
+Using device: cuda
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|#####     | 1/2 [00:02<00:02,  2.54s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:04<00:00,  2.19s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:04<00:00,  2.25s/it]
+Model is loaded on device: cuda:0
+
+--- Training for CWE-22 ---
+320
+Map:   0%|          | 0/320 [00:00<?, ? examples/s]Map: 100%|##########| 320/320 [00:04<00:00, 67.53 examples/s]Map: 100%|##########| 320/320 [00:04<00:00, 67.05 examples/s]
+Training new model for CWE-22...
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 225, in <module>
+    for param in model.classifier.parameters():
+                 ^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1688, in __getattr__
+    raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+AttributeError: 'LlamaForSequenceClassification' object has no attribute 'classifier'
+Using device: cuda
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/accelerate/utils/modeling.py:1363: UserWarning: Current model requires 1073743872 bytes of buffer for offloaded layers, which seems does not fit any GPU's remaining memory. If you are experiencing a OOM later, please consider using offload_buffers=True.
+  warnings.warn(
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|##5       | 1/4 [00:44<02:12, 44.26s/it]Loading checkpoint shards:  50%|#####     | 2/4 [01:25<01:25, 42.65s/it]Loading checkpoint shards:  75%|#######5  | 3/4 [02:22<00:48, 48.85s/it]Loading checkpoint shards: 100%|##########| 4/4 [02:37<00:00, 35.48s/it]Loading checkpoint shards: 100%|##########| 4/4 [02:37<00:00, 39.25s/it]
+WARNING:root:Some parameters are on the meta device device because they were offloaded to the cpu.
+WARNING:accelerate.big_modeling:You shouldn't move a model that is dispatched using accelerate hooks.
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 61, in <module>
+    model = model.to(device)
+            ^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/accelerate/big_modeling.py", line 455, in wrapper
+    raise RuntimeError("You can't move a model that has some modules offloaded to cpu or disk.")
+RuntimeError: You can't move a model that has some modules offloaded to cpu or disk.
+Using device: cuda
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|#####     | 1/2 [00:28<00:28, 28.45s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:41<00:00, 19.46s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:41<00:00, 20.81s/it]
+Model is loaded on device: cuda:0
+
+--- Training for CWE-22 ---
+320
+Map:   0%|          | 0/320 [00:00<?, ? examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 59.77 examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 59.35 examples/s]
+Training new model for CWE-22...
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 225, in <module>
+    for param in model.classifier.parameters():
+                 ^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1688, in __getattr__
+    raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+AttributeError: 'Qwen2ForSequenceClassification' object has no attribute 'classifier'
+Using device: cuda
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|#####     | 1/2 [00:02<00:02,  2.64s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:06<00:00,  3.38s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:06<00:00,  3.27s/it]
+Model is loaded on device: cuda:0
+
+--- Training for CWE-22 ---
+320
+Map:   0%|          | 0/320 [00:00<?, ? examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 63.81 examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 63.39 examples/s]
+Training new model for CWE-22...
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 225, in <module>
+    for param in model.classifier.parameters():
+                 ^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1688, in __getattr__
+    raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+AttributeError: 'Qwen2ForCausalLM' object has no attribute 'classifier'
+Using device: cuda
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|#####     | 1/2 [00:02<00:02,  2.62s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:04<00:00,  2.30s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:04<00:00,  2.35s/it]
+Model is loaded on device: cuda:0
+
+--- Training for CWE-22 ---
+320
+Map:   0%|          | 0/320 [00:00<?, ? examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 61.98 examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 61.60 examples/s]
+Training new model for CWE-22...
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/training_args.py:1525: FutureWarning: `evaluation_strategy` is deprecated and will be removed in version 4.46 of 🤗 Transformers. Use `eval_strategy` instead
+  warnings.warn(
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 222, in <module>
+    for param in model.classifier.parameters():
+                 ^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1688, in __getattr__
+    raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+AttributeError: 'Qwen2ForCausalLM' object has no attribute 'classifier'
+Using device: cuda
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 73, in <module>
+    base_model = Qwen2ForCausalLM.from_pretrained(
+                 ^^^^^^^^^^^^^^^^
+NameError: name 'Qwen2ForCausalLM' is not defined
+Using device: cuda
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|#####     | 1/2 [00:02<00:02,  2.51s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:04<00:00,  2.19s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:04<00:00,  2.24s/it]
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 82, in <module>
+    print(f"Model is loaded on device: {model.device}")
+                                        ^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1688, in __getattr__
+    raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+AttributeError: 'CausalLMWithClassifier' object has no attribute 'device'
