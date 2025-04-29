@@ -122,3 +122,161 @@ Traceback (most recent call last):
     encodings = self._tokenizer.encode_batch(
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 KeyboardInterrupt
+Using device: cpu
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 61, in <module>
+    model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.float16, device_map="auto", trust_remote_code=True)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 563, in from_pretrained
+    return model_class.from_pretrained(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/modeling_utils.py", line 3404, in from_pretrained
+    model = cls(config, *model_args, **model_kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/models/qwen2/modeling_qwen2.py", line 1100, in __init__
+    self.model = Qwen2Model(config)
+                 ^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/models/qwen2/modeling_qwen2.py", line 932, in __init__
+    [Qwen2DecoderLayer(config, layer_idx) for layer_idx in range(config.num_hidden_layers)]
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/models/qwen2/modeling_qwen2.py", line 733, in __init__
+    self.self_attn = QWEN2_ATTENTION_CLASSES[config._attn_implementation](config, layer_idx)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/models/qwen2/modeling_qwen2.py", line 238, in __init__
+    self.rotary_emb = Qwen2RotaryEmbedding(
+                      ^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+Using device: cuda
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|#####     | 1/2 [00:05<00:05,  5.86s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:08<00:00,  4.06s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:08<00:00,  4.33s/it]
+Model is loaded on device: cuda:0
+
+--- Training for CWE-22 ---
+320
+Map:   0%|          | 0/320 [00:00<?, ? examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 59.38 examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 58.94 examples/s]
+Training new model for CWE-22...
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/accelerate/accelerator.py:432: FutureWarning: Passing the following arguments to `Accelerator` is deprecated and will be removed in version 1.0 of Accelerate: dict_keys(['dispatch_batches', 'split_batches', 'even_batches', 'use_seedable_sampler']). Please pass an `accelerate.DataLoaderConfiguration` instead: 
+dataloader_config = DataLoaderConfiguration(dispatch_batches=None, split_batches=False, even_batches=True, use_seedable_sampler=True)
+  warnings.warn(
+  0%|          | 0/175 [00:00<?, ?it/s]Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 219, in <module>
+    trainer.train()
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/trainer.py", line 1780, in train
+    return inner_training_loop(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/trainer.py", line 2118, in _inner_training_loop
+    tr_loss_step = self.training_step(model, inputs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/trainer.py", line 3036, in training_step
+    loss = self.compute_loss(model, inputs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/trainer.py", line 3059, in compute_loss
+    outputs = model(**inputs)
+              ^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/models/qwen2/modeling_qwen2.py", line 1173, in forward
+    outputs = self.model(
+              ^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/models/qwen2/modeling_qwen2.py", line 1020, in forward
+    attention_mask = _prepare_4d_causal_attention_mask_for_sdpa(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/modeling_attn_mask_utils.py", line 362, in _prepare_4d_causal_attention_mask_for_sdpa
+    expanded_4d_mask = attn_mask_converter.to_4d(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/modeling_attn_mask_utils.py", line 132, in to_4d
+    expanded_attn_mask = self._expand_mask(attention_mask_2d, dtype, tgt_len=input_shape[-1]).to(
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/modeling_attn_mask_utils.py", line 184, in _expand_mask
+    inverted_mask = 1.0 - expanded_mask
+                    ~~~~^~~~~~~~~~~~~~~
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/_tensor.py", line 40, in wrapped
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/_tensor.py", line 941, in __rsub__
+    return _C._VariableFunctions.rsub(self, other)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 4.00 GiB. GPU 0 has a total capacity of 23.49 GiB of which 1.74 GiB is free. Including non-PyTorch memory, this process has 21.74 GiB memory in use. Of the allocated memory 21.35 GiB is allocated by PyTorch, and 129.22 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+  0%|          | 0/175 [00:02<?, ?it/s]
+Using device: cuda
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|#####     | 1/2 [00:13<00:13, 14.00s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:24<00:00, 11.90s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:24<00:00, 12.21s/it]
+Model is loaded on device: cuda:0
+
+--- Training for CWE-22 ---
+320
+Map:   0%|          | 0/320 [00:00<?, ? examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 61.74 examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 61.29 examples/s]
+Training new model for CWE-22...
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/accelerate/accelerator.py:432: FutureWarning: Passing the following arguments to `Accelerator` is deprecated and will be removed in version 1.0 of Accelerate: dict_keys(['dispatch_batches', 'split_batches', 'even_batches', 'use_seedable_sampler']). Please pass an `accelerate.DataLoaderConfiguration` instead: 
+dataloader_config = DataLoaderConfiguration(dispatch_batches=None, split_batches=False, even_batches=True, use_seedable_sampler=True)
+  warnings.warn(
+  0%|          | 0/175 [00:00<?, ?it/s]Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 219, in <module>
+    trainer.train()
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/trainer.py", line 1780, in train
+    return inner_training_loop(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/trainer.py", line 2118, in _inner_training_loop
+    tr_loss_step = self.training_step(model, inputs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/trainer.py", line 3036, in training_step
+    loss = self.compute_loss(model, inputs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/trainer.py", line 3059, in compute_loss
+    outputs = model(**inputs)
+              ^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/models/qwen2/modeling_qwen2.py", line 1173, in forward
+    outputs = self.model(
+              ^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/models/qwen2/modeling_qwen2.py", line 1058, in forward
+    layer_outputs = decoder_layer(
+                    ^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/models/qwen2/modeling_qwen2.py", line 786, in forward
+    hidden_states = self.mlp(hidden_states)
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/models/qwen2/modeling_qwen2.py", line 185, in forward
+    return self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
+                                                           ^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/linear.py", line 116, in forward
+    return F.linear(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 4.62 GiB. GPU 0 has a total capacity of 44.34 GiB of which 804.81 MiB is free. Including non-PyTorch memory, this process has 43.54 GiB memory in use. Of the allocated memory 41.76 GiB is allocated by PyTorch, and 1.47 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+  0%|          | 0/175 [00:05<?, ?it/s]
