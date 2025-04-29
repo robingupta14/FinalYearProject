@@ -35,6 +35,7 @@ class CausalLMWithClassifier(nn.Module):
         )
         hidden_states = outputs.hidden_states[-1]
         pooled_output = hidden_states[:, 0, :]
+        pooled_output = pooled_output.to(dtype=self.classifier.weight.dtype) 
         logits = self.classifier(pooled_output).squeeze(-1)
 
         loss = None
@@ -110,7 +111,7 @@ hidden_size = base_model.config.hidden_size
 model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2)
 from transformers import AutoTokenizer
 
-tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, model_max_length=16384, truncation_side="left")
+tokenizer = AutoTokenizer.from_pretrained(model_path, model_max_length=16384, truncation_side="left")
 
 
 class FileAwareTrainer(Trainer):
