@@ -46,6 +46,7 @@ class CausalLMWithClassifier(nn.Module):
             attentions=outputs.attentions if hasattr(outputs, "attentions") else None,
         )
 
+    @classmethod
     def from_pretrained(cls, model_dir):
         base_model = AutoModelForCausalLM.from_pretrained(model_dir)
 
