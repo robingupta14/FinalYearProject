@@ -21,7 +21,8 @@ class CausalLMWithClassifier(nn.Module):
     def __init__(self, base_model, hidden_size, num_labels=2):
         super().__init__()
         self.base_model = base_model
-        self.classifier = nn.Linear(hidden_size, num_labels)
+        self.classifier = nn.Linear(hidden_size, 1)
+
 
     def forward(self, input_ids=None, attention_mask=None, labels=None, **kwargs):
         outputs = self.base_model(
@@ -30,9 +31,11 @@ class CausalLMWithClassifier(nn.Module):
             output_hidden_states=True,
             **kwargs
         )
-        hidden_states = outputs.hidden_states[-1] 
-        pooled_output = hidden_states[:, 0, :]
-        logits = self.classifier(pooled_output).squeeze(-1) 
+
+        hidden_states = outputs.hidden_states[-1]           
+        pooled_output = hidden_states[:, 0, :]        
+        logits = self.classifier(pooled_output).squeeze(-1)  
+
         loss = None
         if labels is not None:
             loss = F.binary_cross_entropy_with_logits(logits, labels.float())
@@ -41,6 +44,7 @@ class CausalLMWithClassifier(nn.Module):
             "loss": loss,
             "logits": logits,
         }
+
 
 class Tee(object):
     def __init__(self, filename, mode="a"):
