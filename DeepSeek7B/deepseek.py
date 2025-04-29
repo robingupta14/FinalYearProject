@@ -22,11 +22,19 @@ class CausalLMWithClassifier(nn.Module):
         self.base_model = base_model
         self.classifier = nn.Linear(hidden_size, num_labels)
 
-    def forward(self, input_ids, attention_mask=None):
-        outputs = self.base_model(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=True)
-        last_hidden_state = outputs.hidden_states[-1]
-        pooled = last_hidden_state[:, -1, :]
-        return self.classifier(pooled)
+    def forward(self, input_ids=None, attention_mask=None, labels=None, **kwargs):
+        outputs = self.base_model(input_ids=input_ids, attention_mask=attention_mask, **kwargs)
+        hidden_states = outputs.last_hidden_state
+        pooled_output = hidden_states[:, 0, :]
+        logits = self.classifier(pooled_output)
+        loss = None
+        if labels is not None:
+            loss = F.binary_cross_entropy_with_logits(logits.view(-1), labels.float())
+
+        return {
+            "loss": loss,
+            "logits": logits,
+        }
 
 class Tee(object):
     def __init__(self, filename, mode="a"):
@@ -66,7 +74,6 @@ EPOCHS = 5
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
-
 model_path = "/vol/bitbucket/rg721/models--deepseek-ai--DeepSeek-R1-Distill-Qwen-7B/snapshots/916b56a44061fd5cd7d6a8fb632557ed4f724f60"
 
 base_model = Qwen2ForCausalLM.from_pretrained(
@@ -76,9 +83,10 @@ base_model = Qwen2ForCausalLM.from_pretrained(
     trust_remote_code=True
 )
 hidden_size = base_model.config.hidden_size
-model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2, device="cuda")
+model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2)
+from transformers import AutoTokenizer
 
-print(f"Model is loaded on device: {model.device}")
+tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
 
 class FileAwareTrainer(Trainer):
@@ -239,10 +247,6 @@ for cwe_id in ALLOWED_CWE_IDS:
 
     for param in model.classifier.parameters():
         param.requires_grad = True
-
-    for layer in model.base_model.encoder.layer[-2:]:
-        for param in layer.parameters():
-            param.requires_grad = True
 
     trainer.train()
     trainer.save_model(f"./models/vulberta_{cwe_id}")
