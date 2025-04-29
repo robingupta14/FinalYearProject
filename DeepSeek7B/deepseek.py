@@ -19,7 +19,7 @@ from transformers import Qwen2ForCausalLM
 from transformers.modeling_outputs import SequenceClassifierOutput
 
 class CausalLMWithClassifier(nn.Module):
-    def __init__(self, base_model, hidden_size, classifier=None, num_labels=2):
+    def __init__(self, base_model, hidden_size=2, classifier=None, num_labels=2):
         super().__init__()
         self.base_model = base_model
         if classifier is None:
