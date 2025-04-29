@@ -218,8 +218,17 @@ for cwe_id in ALLOWED_CWE_IDS:
         optimizers=(optimizer, scheduler)
     )
     model.gradient_checkpointing_enable()
-    # for param in model.base_model.parameters():
-    #     param.requires_grad = False
+
+    
+    for param in model.base_model.parameters():
+        param.requires_grad = False
+
+    for param in model.classifier.parameters():
+        param.requires_grad = True
+
+    for layer in model.base_model.encoder.layer[-10:]:
+        for param in layer.parameters():
+            param.requires_grad = True
 
     trainer.train()
     trainer.save_model(f"./models/vulberta_{cwe_id}")
