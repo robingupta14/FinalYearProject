@@ -65,7 +65,7 @@ tee = Tee(logfile_path)
 
 
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
-DATASET_ROOT = "../../CrossVul"
+DATASET_ROOT = "/vol/bitbucket/rg721/CrossVul"
 ALLOWED_CWE_IDS = {"CWE-22"} # "CWE-22", "CWE-89", "CWE-787"
 LANGUAGES = ['c', 'cpp', 'cs', 'html', 'java', 'py', 'php']
 SEED = 42
@@ -86,7 +86,7 @@ hidden_size = base_model.config.hidden_size
 model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2)
 from transformers import AutoTokenizer
 
-tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, model_max_length=16384, truncation_side="left")
 
 
 class FileAwareTrainer(Trainer):
@@ -165,7 +165,7 @@ def tokenize_example(batch, cwe_id, max_length=16384):
     for code, label, filename in zip(batch["code"], batch["label"], batch["filename"]):
         prompt = f"Does this source code contain the following vulnerability {cwe_id}? {code}"
         
-        tokens = tokenizer(prompt, return_attention_mask=True, truncation=False)
+        tokens = tokenizer(prompt, return_attention_mask=True, truncation=True, padding="max_length", max_length=16384)
         input_ids = tokens["input_ids"]
         attention_mask = tokens["attention_mask"]
 
@@ -223,8 +223,10 @@ for cwe_id in ALLOWED_CWE_IDS:
         output_dir=f"./models/vulberta_{cwe_id}",
         evaluation_strategy="epoch",
         learning_rate=2e-5,
-        per_device_train_batch_size=8,
-        per_device_eval_batch_size=8,
+        per_device_train_batch_size=1,
+        per_device_eval_batch_size=1,
+        gradient_accumulation_steps=8,
+        bf16=True,
         num_train_epochs=EPOCHS,
         weight_decay=0.01,
         save_strategy="epoch",
