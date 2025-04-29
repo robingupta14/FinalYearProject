@@ -141,7 +141,7 @@ DATASET_ROOT = "/vol/bitbucket/rg721/CrossVul"
 ALLOWED_CWE_IDS = {"CWE-22"} # "CWE-22", "CWE-89", "CWE-787"
 LANGUAGES = ['c', 'cpp', 'cs', 'html', 'java', 'py', 'php']
 SEED = 42
-EPOCHS = 5
+EPOCHS = 3
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
@@ -195,8 +195,14 @@ for cwe_id in ALLOWED_CWE_IDS:
     optimizer = AdamW(model.parameters(), lr=2e-5, weight_decay=0.01)
     num_train_steps = len(train_loader) * EPOCHS
     scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=int(0.1 * num_train_steps), num_training_steps=num_train_steps)
+    for param in model.base_model.parameters():
+        param.requires_grad = False
+        
+    for param in model.classifier.parameters():
+        param.requires_grad = True
 
     model.train()
+
     for epoch in range(EPOCHS):
         print(f"\nEpoch {epoch + 1}/{EPOCHS}")
         running_loss = 0.0
@@ -216,6 +222,7 @@ for cwe_id in ALLOWED_CWE_IDS:
     model.eval()
     all_preds = []
     all_labels = []
+
     with torch.no_grad():
         for batch in tqdm(accelerator.prepare(eval_loader)):
             batch = {k: v.to(accelerator.device) for k, v in batch.items()}
