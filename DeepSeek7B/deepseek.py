@@ -17,7 +17,9 @@ import sys
 import os
 from transformers import Qwen2ForCausalLM
 from transformers.modeling_outputs import SequenceClassifierOutput
+from torch.utils.data import DataLoader
 
+# CLASS DEFS
 class CausalLMWithClassifier(nn.Module):
     def __init__(self, base_model, hidden_size=2, classifier=None, num_labels=2):
         super().__init__()
@@ -60,7 +62,6 @@ class CausalLMWithClassifier(nn.Module):
 
         return cls(base_model=base_model, classifier=classifier)
 
-
 class Tee(object):
     def __init__(self, filename, mode="a"):
         self.file = open(filename, mode)
@@ -84,50 +85,6 @@ class Tee(object):
         sys.stdout = self.stdout
         sys.stderr = self.stderr
 
-logfile_path = "./training_log.txt"
-tee = Tee(logfile_path)
-
-
-
-os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
-DATASET_ROOT = "/vol/bitbucket/rg721/CrossVul"
-ALLOWED_CWE_IDS = {"CWE-22"} # "CWE-22", "CWE-89", "CWE-787"
-LANGUAGES = ['c', 'cpp', 'cs', 'html', 'java', 'py', 'php']
-SEED = 42
-EPOCHS = 5
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Using device: {device}")
-
-model_path = "/vol/bitbucket/rg721/FinalYearProject/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
-
-base_model = Qwen2ForCausalLM.from_pretrained(
-    model_path,
-    torch_dtype=torch.float16,
-    device_map="auto",
-    trust_remote_code=True
-)
-hidden_size = base_model.config.hidden_size
-model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2)
-from transformers import AutoTokenizer
-
-tokenizer = AutoTokenizer.from_pretrained(model_path, model_max_length=16384, truncation_side="left")
-
-
-class FileAwareTrainer(Trainer):
-    def __init__(self, *args, eval_dataset_filenames=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.eval_dataset_filenames = eval_dataset_filenames
-
-    def evaluate(self, eval_dataset=None, **kwargs):
-        output = super().evaluate(eval_dataset=eval_dataset, **kwargs)
-        self._last_eval_preds = kwargs.get('preds', None)
-        return output
-
-    def predict(self, test_dataset, **kwargs):
-        self.eval_dataset_filenames = test_dataset['filename']
-        return super().predict(test_dataset, **kwargs)
-
 def collect_files_for_cwe(cwe_id):
     samples = []
     for lang in LANGUAGES:
@@ -149,94 +106,60 @@ def collect_files_for_cwe(cwe_id):
     print(len(samples))
     return samples
 
-def compute_file_metrics_builder(filenames):
-    def compute_file_metrics(eval_pred):
-        preds = eval_pred.predictions
-        labels = eval_pred.label_ids
-
-        if isinstance(preds, np.ndarray) and preds.ndim > 1:
-            preds = np.argmax(preds, axis=-1)
-        preds = np.asarray(preds).flatten()
-        labels = np.asarray(labels).flatten()
-
-        global eval_filenames
-        if 'eval_filenames' not in globals():
-            raise ValueError("Global variable `eval_filenames` not set. Set it to list of filenames before eval.")
-
-        filenames = eval_filenames
-        if isinstance(filenames, str) or not hasattr(filenames, '__len__'):
-            filenames = [filenames]
-
-        if len(filenames) != len(preds):
-            raise ValueError(f"Mismatch: {len(filenames)=}, {len(preds)=}, {len(labels)=}")
-
-        metrics = []
-        for pred, label, fname in zip(preds, labels, filenames):
-            metrics.append({
-                "filename": fname,
-                "prediction": int(pred),
-                "label": int(label),
-                "tp": int(pred == 1 and label == 1),
-                "fp": int(pred == 1 and label == 0),
-                "tn": int(pred == 0 and label == 0),
-                "fn": int(pred == 0 and label == 1),
-            })
-
-        tp = sum(m["tp"] for m in metrics)
-        fp = sum(m["fp"] for m in metrics)
-        tn = sum(m["tn"] for m in metrics)
-        fn = sum(m["fn"] for m in metrics)
-
-        precision = tp / (tp + fp + 1e-8)
-        recall = tp / (tp + fn + 1e-8)
-        f1 = 2 * precision * recall / (precision + recall + 1e-8)
-        accuracy = (tp + tn) / (tp + tn + fp + fn + 1e-8)
-
-        return {
-            "accuracy": accuracy,
-            "precision": precision,
-            "recall": recall,
-            "f1": f1,
-        }
-
-
 def tokenize_example(batch, cwe_id, max_length=16384):
-    input_ids_list = []
-    attention_mask_list = []
-    labels_list = []
-    filenames_list = []
-
-    for code, label, filename in zip(batch["code"], batch["label"], batch["filename"]):
-        prompt = f"Does this source code contain the following vulnerability {cwe_id}? {code}"
-        
-        tokens = tokenizer(prompt, return_attention_mask=True, truncation=True, padding="max_length", max_length=16384)
-        input_ids = tokens["input_ids"]
-        attention_mask = tokens["attention_mask"]
-
-        for i in range(0, len(input_ids), max_length):
-            chunk_ids = input_ids[i:i + max_length]
-            chunk_mask = attention_mask[i:i + max_length]
-
-            pad_len = max_length - len(chunk_ids)
-            if pad_len > 0:
-                chunk_ids += [tokenizer.pad_token_id] * pad_len
-                chunk_mask += [0] * pad_len
-
-            input_ids_list.append(chunk_ids)
-            attention_mask_list.append(chunk_mask)
-            labels_list.append(label)
-            filenames_list.append(filename)
-
+    tokens = tokenizer(
+        [f"Does this source code contain the following vulnerability {cwe_id}? {code}" for code in batch["code"]],
+        return_attention_mask=True,
+        truncation=True,
+        padding="max_length",
+        max_length=max_length,
+    )
     return {
-        "input_ids": input_ids_list,
-        "attention_mask": attention_mask_list,
-        "label": labels_list,
-        "filename": filenames_list
+        "input_ids": tokens["input_ids"],
+        "attention_mask": tokens["attention_mask"],
+        "label": batch["label"],
     }
 
+def compute_metrics(preds, labels):
+    preds = torch.sigmoid(preds).detach().cpu().numpy()
+    preds_bin = (preds > 0.5).astype(int)
+    labels = labels.cpu().numpy()
+    precision, recall, f1, _ = precision_recall_fscore_support(labels, preds_bin, average='binary', zero_division=0)
+    acc = accuracy_score(labels, preds_bin)
+    return {
+        "accuracy": acc,
+        "precision": precision,
+        "recall": recall,
+        "f1": f1
+    }
+
+# INITIALISATION
+logfile_path = "./training_log.txt"
+tee = Tee(logfile_path)
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+DATASET_ROOT = "/vol/bitbucket/rg721/CrossVul"
+ALLOWED_CWE_IDS = {"CWE-22"} # "CWE-22", "CWE-89", "CWE-787"
+LANGUAGES = ['c', 'cpp', 'cs', 'html', 'java', 'py', 'php']
+SEED = 42
+EPOCHS = 5
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
+
+model_path = "/vol/bitbucket/rg721/FinalYearProject/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+base_model = Qwen2ForCausalLM.from_pretrained(
+    model_path,
+    torch_dtype=torch.float16,
+    device_map="auto",
+    trust_remote_code=True
+)
+hidden_size = base_model.config.hidden_size
+model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2)
+
+tokenizer = AutoTokenizer.from_pretrained(model_path, model_max_length=16384, truncation_side="left")
 accelerator = Accelerator()
 model = model.to(accelerator.device)
 
+# FINETUNING
 for cwe_id in ALLOWED_CWE_IDS:
     print(f"\n--- Processing for {cwe_id} ---")
     model_dir = f"./models/vulberta_{cwe_id}"
@@ -246,132 +169,67 @@ for cwe_id in ALLOWED_CWE_IDS:
 
     raw_dataset = Dataset.from_list(samples)
     tokenized_dataset = raw_dataset.map(
-        tokenize_example, 
-        batched=True, 
-        remove_columns=["filename", "code"], 
+        tokenize_example,
+        batched=True,
+        remove_columns=["filename", "code"],
         fn_kwargs={"cwe_id": cwe_id}
     )
-    tokenized_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'label', 'filename'])
+    tokenized_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'label'])
     train_test = tokenized_dataset.train_test_split(test_size=0.2, seed=SEED)
-    train_dataset = train_test["train"]
-    eval_dataset = train_test["test"]
+    train_loader = DataLoader(train_test["train"], batch_size=1, shuffle=True)
+    eval_loader = DataLoader(train_test["test"], batch_size=1)
 
-    base_model = Qwen2ForCausalLM.from_pretrained(
-        model_path,
-        torch_dtype=torch.float16,
-        device_map="auto",
-        trust_remote_code=True
-    )
-
-    model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2)
+    if os.path.isdir(model_dir) and os.path.exists(os.path.join(model_dir, "classifier.pt")):
+        print(f"Loading pre-trained model for {cwe_id} from {model_dir}")
+        model = CausalLMWithClassifier.from_pretrained(model_dir)
+    else:
+        print(f"Initializing new model for {cwe_id}")
+        base_model = Qwen2ForCausalLM.from_pretrained(
+            model_path,
+            torch_dtype=torch.float16,
+            device_map="auto",
+            trust_remote_code=True
+        )
+        model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2)
     model = model.to(accelerator.device)
 
     optimizer = AdamW(model.parameters(), lr=2e-5, weight_decay=0.01)
-    num_train_steps = len(train_dataset) * EPOCHS
-    warmup_steps = int(0.1 * num_train_steps)
-    scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps, num_training_steps=num_train_steps)
+    num_train_steps = len(train_loader) * EPOCHS
+    scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=int(0.1 * num_train_steps), num_training_steps=num_train_steps)
 
-    training_args = TrainingArguments(
-        output_dir=model_dir,
-        eval_strategy="epoch",
-        learning_rate=2e-5,
-        per_device_train_batch_size=1,
-        per_device_eval_batch_size=1,
-        gradient_accumulation_steps=8,
-        bf16=True,
-        num_train_epochs=EPOCHS,
-        weight_decay=0.01,
-        save_strategy="epoch",
-        load_best_model_at_end=True,
-        metric_for_best_model="eval_loss",
-        remove_unused_columns=False,
-    )
+    model.train()
+    for epoch in range(EPOCHS):
+        print(f"\nEpoch {epoch + 1}/{EPOCHS}")
+        running_loss = 0.0
+        for batch in tqdm(accelerator.prepare(train_loader)):
+            optimizer.zero_grad()
+            batch = {k: v.to(accelerator.device) for k, v in batch.items()}
+            with autocast():
+                outputs = model(**batch)
+            accelerator.backward(outputs.loss)
+            optimizer.step()
+            scheduler.step()
+            running_loss += outputs.loss.item()
+        print(f"Training Loss: {running_loss / len(train_loader):.4f}")
 
-    trainer = FileAwareTrainer(
-        model=model,
-        args=training_args,
-        train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
-        compute_metrics=compute_file_metrics_builder(eval_dataset["filename"]),
-        optimizers=(optimizer, scheduler)
-    )
-    
-    if os.path.exists(model_dir):
-        print(f"Found existing model at {model_dir}. Loading...")
-        model = CausalLMWithClassifier.from_pretrained(model_dir)
-        model = model.to(accelerator.device)
-        continue 
-    else:
-        print(f"No existing model found at {model_dir}. Finetuning...")
+    model.eval()
+    all_preds = []
+    all_labels = []
+    with torch.no_grad():
+        for batch in tqdm(accelerator.prepare(eval_loader)):
+            batch = {k: v.to(accelerator.device) for k, v in batch.items()}
+            outputs = model(**batch)
+            all_preds.append(outputs.logits.squeeze(-1))
+            all_labels.append(batch["label"])
 
-        for param in model.base_model.parameters():
-            param.requires_grad = False
-        for param in model.classifier.parameters():
-            param.requires_grad = True
+    preds = torch.cat(all_preds)
+    labels = torch.cat(all_labels)
+    metrics = compute_metrics(preds, labels)
+    print(f"\nMetrics for {cwe_id}:")
+    print(metrics)
+    print("\nConfusion Matrix:")
+    print(confusion_matrix(labels.cpu(), (torch.sigmoid(preds) > 0.5).int().cpu()))
 
-        trainer.train()
-        model.base_model.save_pretrained(model_dir)
-        torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
-
-
-def predict_with_chunk_voting(trainer, raw_samples, chunk_size=512, stride=256):
-    true_labels = []
-    pred_labels = []
-
-    for example in tqdm(raw_samples, desc="Evaluating with chunk voting"):
-        label = example["label"]
-        true_labels.append(label)
-
-        tokens = tokenizer(example["code"], return_attention_mask=True, truncation=False)
-        input_ids = tokens["input_ids"]
-        attention_mask = tokens["attention_mask"]
-
-        chunks = []
-        for i in range(0, len(input_ids), stride):
-            chunk_ids = input_ids[i:i + chunk_size]
-            chunk_mask = attention_mask[i:i + chunk_size]
-
-            chunks.append({
-                "input_ids": chunk_ids,
-                "attention_mask": chunk_mask,
-            })
-
-        if not chunks:
-            pred_labels.append(0)
-            continue
-
-        max_len = max(len(c["input_ids"]) for c in chunks)
-        for chunk in chunks:
-            pad_len = max_len - len(chunk["input_ids"])
-            chunk["input_ids"] += [tokenizer.pad_token_id] * pad_len
-            chunk["attention_mask"] += [0] * pad_len
-
-        device = next(trainer.model.parameters()).device
-        input_ids = torch.tensor([c["input_ids"] for c in chunks]).to(device)
-        attention_mask = torch.tensor([c["attention_mask"] for c in chunks]).to(device)
-
-        with torch.no_grad():
-            outputs = trainer.model(input_ids=input_ids, attention_mask=attention_mask)
-            logits = outputs.logits
-            preds = torch.argmax(logits, dim=1).cpu().numpy()
-
-        file_pred = 1 if (preds.mean() > 0.2) else 0
-        pred_labels.append(file_pred)
-
-    return true_labels, pred_labels
-
-true_labels, pred_labels = predict_with_chunk_voting(trainer, samples) 
-precision, recall, f1, _ = precision_recall_fscore_support(true_labels, pred_labels, average='binary', zero_division=0)
-acc = accuracy_score(true_labels, pred_labels)
-
-print(f"Metrics for {cwe_id}:")
-print({
-    'accuracy': acc,
-    'precision': precision,
-    'recall': recall,
-    'f1': f1,
-})
-
-print(f"\nConfusion Matrix for {cwe_id}:")
-print(confusion_matrix(true_labels, pred_labels))
+    model.base_model.save_pretrained(model_dir)
+    torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
 tee.close()
