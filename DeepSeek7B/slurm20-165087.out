@@ -1,0 +1,125 @@
+Tue Apr 29 17:00:22 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.120                Driver Version: 550.120        CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A40                     Off |   00000000:01:00.0 Off |                    0 |
+|  0%   27C    P8             21W /  300W |       1MiB /  46068MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+ 17:00:22 up 3 days, 16:19,  0 user,  load average: 0.19, 0.46, 0.41
+Using device: cuda
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+
+--- Training for CWE-22 ---
+320
+Map:   0%|          | 0/320 [00:00<?, ? examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 57.26 examples/s]Map: 100%|##########| 320/320 [00:05<00:00, 56.70 examples/s]
+Training new model for CWE-22...
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/training_args.py:1525: FutureWarning: `evaluation_strategy` is deprecated and will be removed in version 4.46 of 🤗 Transformers. Use `eval_strategy` instead
+  warnings.warn(
+  0%|          | 0/160 [00:00<?, ?it/s]  1%|          | 1/160 [00:18<48:56, 18.47s/it]  1%|1         | 2/160 [00:33<43:18, 16.45s/it]  2%|1         | 3/160 [00:48<41:25, 15.83s/it]  2%|2         | 4/160 [01:03<40:27, 15.56s/it]  3%|3         | 5/160 [01:18<39:51, 15.43s/it]  4%|3         | 6/160 [01:33<38:48, 15.12s/it]  4%|4         | 7/160 [01:48<38:39, 15.16s/it]  5%|5         | 8/160 [02:03<37:47, 14.92s/it]  6%|5         | 9/160 [02:17<37:08, 14.76s/it]  6%|6         | 10/160 [02:32<37:17, 14.91s/it]  7%|6         | 11/160 [02:47<36:37, 14.75s/it]  8%|7         | 12/160 [03:02<36:46, 14.91s/it]  8%|8         | 13/160 [03:16<36:09, 14.76s/it]  9%|8         | 14/160 [03:31<35:40, 14.66s/it]  9%|9         | 15/160 [03:46<35:52, 14.84s/it] 10%|#         | 16/160 [04:00<35:18, 14.71s/it] 11%|#         | 17/160 [04:15<34:49, 14.61s/it] 11%|#1        | 18/160 [04:28<33:48, 14.29s/it] 12%|#1        | 19/160 [04:44<34:16, 14.58s/it] 12%|#2        | 20/160 [04:58<33:55, 14.54s/it] 13%|#3        | 21/160 [05:12<33:35, 14.50s/it] 14%|#3        | 22/160 [05:28<33:53, 14.73s/it] 14%|#4        | 23/160 [05:43<34:00, 14.90s/it] 15%|#5        | 24/160 [05:58<34:02, 15.02s/it] 16%|#5        | 25/160 [06:13<33:23, 14.84s/it] 16%|#6        | 26/160 [06:28<33:25, 14.97s/it] 17%|#6        | 27/160 [06:42<32:47, 14.80s/it] 18%|#7        | 28/160 [06:58<32:51, 14.93s/it] 18%|#8        | 29/160 [07:12<32:14, 14.77s/it] 19%|#8        | 30/160 [07:27<32:19, 14.92s/it] 19%|#9        | 31/160 [07:42<31:43, 14.76s/it] 20%|##        | 32/160 [07:57<31:49, 14.92s/it]We detected that you are passing `past_key_values` as a tuple and this is deprecated and will be removed in v4.43. Please use an appropriate `Cache` class (https://huggingface.co/docs/transformers/v4.41.3/en/internal/generation_utils#transformers.Cache)
+
+  0%|          | 0/64 [00:00<?, ?it/s][A
+  3%|3         | 2/64 [00:01<00:59,  1.05it/s][A
+  5%|4         | 3/64 [00:03<01:22,  1.35s/it][A
+  6%|6         | 4/64 [00:05<01:33,  1.56s/it][A
+  8%|7         | 5/64 [00:07<01:39,  1.68s/it][A
+  9%|9         | 6/64 [00:09<01:42,  1.76s/it][A
+ 11%|#         | 7/64 [00:11<01:43,  1.81s/it][A
+ 12%|#2        | 8/64 [00:13<01:42,  1.84s/it][A
+ 14%|#4        | 9/64 [00:15<01:42,  1.86s/it][A
+ 16%|#5        | 10/64 [00:17<01:41,  1.88s/it][A
+ 17%|#7        | 11/64 [00:19<01:39,  1.89s/it][A
+ 19%|#8        | 12/64 [00:21<01:38,  1.89s/it][A
+ 20%|##        | 13/64 [00:22<01:36,  1.89s/it][A
+ 22%|##1       | 14/64 [00:24<01:35,  1.90s/it][A
+ 23%|##3       | 15/64 [00:26<01:33,  1.90s/it][A
+ 25%|##5       | 16/64 [00:28<01:31,  1.90s/it][A
+ 27%|##6       | 17/64 [00:30<01:29,  1.91s/it][A
+ 28%|##8       | 18/64 [00:32<01:27,  1.91s/it][A
+ 30%|##9       | 19/64 [00:34<01:25,  1.91s/it][A
+ 31%|###1      | 20/64 [00:36<01:23,  1.91s/it][A
+ 33%|###2      | 21/64 [00:38<01:22,  1.91s/it][A
+ 34%|###4      | 22/64 [00:40<01:20,  1.91s/it][A
+ 36%|###5      | 23/64 [00:42<01:18,  1.91s/it][A
+ 38%|###7      | 24/64 [00:43<01:16,  1.91s/it][A
+ 39%|###9      | 25/64 [00:45<01:14,  1.90s/it][A
+ 41%|####      | 26/64 [00:47<01:12,  1.90s/it][A
+ 42%|####2     | 27/64 [00:49<01:10,  1.90s/it][A
+ 44%|####3     | 28/64 [00:50<00:59,  1.64s/it][A
+ 45%|####5     | 29/64 [00:52<01:00,  1.72s/it][A
+ 47%|####6     | 30/64 [00:54<01:00,  1.78s/it][A
+ 48%|####8     | 31/64 [00:56<00:59,  1.82s/it][A
+ 50%|#####     | 32/64 [00:58<00:59,  1.84s/it][A
+ 52%|#####1    | 33/64 [01:00<00:57,  1.86s/it][A
+ 53%|#####3    | 34/64 [01:02<00:56,  1.88s/it][A
+ 55%|#####4    | 35/64 [01:03<00:54,  1.89s/it][A
+ 56%|#####6    | 36/64 [01:05<00:52,  1.89s/it][A
+ 58%|#####7    | 37/64 [01:07<00:51,  1.90s/it][A
+ 59%|#####9    | 38/64 [01:09<00:49,  1.90s/it][A
+ 61%|######    | 39/64 [01:11<00:47,  1.90s/it][A
+ 62%|######2   | 40/64 [01:13<00:45,  1.90s/it][A
+ 64%|######4   | 41/64 [01:15<00:43,  1.91s/it][A
+ 66%|######5   | 42/64 [01:17<00:41,  1.91s/it][A
+ 67%|######7   | 43/64 [01:19<00:40,  1.91s/it][A
+ 69%|######8   | 44/64 [01:21<00:38,  1.91s/it][A
+ 70%|#######   | 45/64 [01:23<00:36,  1.91s/it][A
+ 72%|#######1  | 46/64 [01:25<00:34,  1.91s/it][A
+ 73%|#######3  | 47/64 [01:26<00:32,  1.91s/it][A
+ 75%|#######5  | 48/64 [01:28<00:30,  1.91s/it][A
+ 77%|#######6  | 49/64 [01:30<00:28,  1.91s/it][A
+ 78%|#######8  | 50/64 [01:31<00:23,  1.65s/it][A
+ 80%|#######9  | 51/64 [01:33<00:22,  1.73s/it][A
+ 81%|########1 | 52/64 [01:35<00:21,  1.78s/it][A
+ 83%|########2 | 53/64 [01:37<00:20,  1.82s/it][A
+ 84%|########4 | 54/64 [01:38<00:15,  1.58s/it][A
+ 86%|########5 | 55/64 [01:40<00:15,  1.68s/it][A
+ 88%|########7 | 56/64 [01:42<00:13,  1.75s/it][A
+ 89%|########9 | 57/64 [01:44<00:12,  1.80s/it][A
+ 91%|######### | 58/64 [01:46<00:10,  1.83s/it][A
+ 92%|#########2| 59/64 [01:48<00:09,  1.85s/it][A
+ 94%|#########3| 60/64 [01:49<00:07,  1.87s/it][A
+ 95%|#########5| 61/64 [01:51<00:05,  1.88s/it][A
+ 97%|#########6| 62/64 [01:53<00:03,  1.89s/it][A
+ 98%|#########8| 63/64 [01:54<00:01,  1.63s/it][A
+100%|##########| 64/64 [01:56<00:00,  1.71s/it][ATraceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 263, in <module>
+    trainer.train()
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/trainer.py", line 1938, in train
+    return inner_training_loop(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/trainer.py", line 2376, in _inner_training_loop
+    self._maybe_log_save_evaluate(tr_loss, grad_norm, model, trial, epoch, ignore_keys_for_eval)
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/trainer.py", line 2804, in _maybe_log_save_evaluate
+    metrics = self._evaluate(trial, ignore_keys_for_eval)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/trainer.py", line 2761, in _evaluate
+    metrics = self.evaluate(ignore_keys=ignore_keys_for_eval)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 108, in evaluate
+    output = super().evaluate(eval_dataset=eval_dataset, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/trainer.py", line 3666, in evaluate
+    output = eval_loop(
+             ^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/trainer.py", line 3956, in evaluation_loop
+    metrics = self.compute_metrics(EvalPrediction(predictions=all_preds, label_ids=all_labels))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 145, in compute_file_metrics
+    for pred, label, fname in zip(preds, labels, filenames):
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'numpy.int64' object is not iterable
+ 20%|##        | 32/160 [09:56<39:45, 18.64s/it]
+
+                                               [A
