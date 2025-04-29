@@ -19,10 +19,12 @@ from transformers import Qwen2ForCausalLM
 from transformers.modeling_outputs import SequenceClassifierOutput
 
 class CausalLMWithClassifier(nn.Module):
-    def __init__(self, base_model, hidden_size, num_labels=2):
+    def __init__(self, base_model, hidden_size, classifier, num_labels=2):
         super().__init__()
         self.base_model = base_model
-        self.classifier = nn.Linear(hidden_size, 1)
+        if classifier is None:
+            classifier = nn.Linear(hidden_size, 1)
+        self.classifier = classifier
 
     def forward(self, input_ids=None, attention_mask=None, labels=None, **kwargs):
         outputs = self.base_model(
