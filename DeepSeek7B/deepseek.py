@@ -218,28 +218,27 @@ for cwe_id in ALLOWED_CWE_IDS:
             scheduler.step()
             running_loss += outputs.loss.item()
         print(f"Training Loss: {running_loss / len(train_loader):.4f}")
+        model.eval()
+        all_preds = []
+        all_labels = []
 
-    model.eval()
-    all_preds = []
-    all_labels = []
+        with torch.no_grad():
+            for batch in tqdm(accelerator.prepare(eval_loader)):
+                batch = {k: v.to(accelerator.device) for k, v in batch.items()}
+                if 'label' in batch:
+                    batch['labels'] = batch.pop('label')
+                outputs = model(**batch)
+                all_preds.append(outputs.logits.squeeze(-1))
+                all_labels.append(batch["label"])
 
-    with torch.no_grad():
-        for batch in tqdm(accelerator.prepare(eval_loader)):
-            batch = {k: v.to(accelerator.device) for k, v in batch.items()}
-            if 'label' in batch:
-                batch['labels'] = batch.pop('label')
-            outputs = model(**batch)
-            all_preds.append(outputs.logits.squeeze(-1))
-            all_labels.append(batch["label"])
-
-    preds = torch.cat(all_preds)
-    labels = torch.cat(all_labels)
-    metrics = compute_metrics(preds, labels)
-    print(f"\nMetrics for {cwe_id}:")
-    print(metrics)
-    print("\nConfusion Matrix:")
-    print(confusion_matrix(labels.cpu(), (torch.sigmoid(preds) > 0.5).int().cpu()))
-
-    model.base_model.save_pretrained(model_dir)
-    torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
+        preds = torch.cat(all_preds)
+        labels = torch.cat(all_labels)
+        metrics = compute_metrics(preds, labels)
+        print(f"\nMetrics after epoch {epoch + 1}:")
+        print(metrics)
+        print("\nConfusion Matrix:")
+        print(confusion_matrix(labels.cpu(), (torch.sigmoid(preds) > 0.5).int().cpu()))
+        
+model.base_model.save_pretrained(model_dir)
+torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
 tee.close()
