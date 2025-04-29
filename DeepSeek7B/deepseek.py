@@ -196,15 +196,17 @@ for cwe_id in ALLOWED_CWE_IDS:
     training_args = TrainingArguments(
         output_dir=f"./models/vulberta_{cwe_id}",
         evaluation_strategy="epoch",
-        learning_rate=2e-5,
-        per_device_train_batch_size=8,
-        per_device_eval_batch_size=8,
+        learning_rate=2e-5, 
+        per_device_train_batch_size=4,
+        per_device_eval_batch_size=4,
+        gradient_accumulation_steps=2,
         num_train_epochs=EPOCHS,
         weight_decay=0.01,
         save_strategy="epoch",
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
         remove_unused_columns=False,
+        bf16=True,
     )
     
     trainer = FileAwareTrainer(
@@ -215,7 +217,7 @@ for cwe_id in ALLOWED_CWE_IDS:
         compute_metrics=compute_file_metrics_builder(eval_dataset["filename"]),
         optimizers=(optimizer, scheduler)
     )
-
+    model.gradient_checkpointing_enable()
     trainer.train()
     trainer.save_model(f"./models/vulberta_{cwe_id}")
 
