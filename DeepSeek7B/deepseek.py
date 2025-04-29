@@ -24,7 +24,6 @@ class CausalLMWithClassifier(nn.Module):
 
     def forward(self, input_ids, attention_mask=None):
         outputs = self.base_model(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=True)
-
         last_hidden_state = outputs.hidden_states[-1]
         pooled = last_hidden_state[:, -1, :]
         return self.classifier(pooled)
@@ -77,7 +76,7 @@ base_model = Qwen2ForCausalLM.from_pretrained(
     trust_remote_code=True
 )
 hidden_size = base_model.config.hidden_size
-model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2).to("cuda")
+model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2, device="cuda")
 
 print(f"Model is loaded on device: {model.device}")
 
