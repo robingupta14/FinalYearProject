@@ -239,24 +239,6 @@ model = model.to(accelerator.device)
 for cwe_id in ALLOWED_CWE_IDS:
     print(f"\n--- Processing for {cwe_id} ---")
     model_dir = f"./models/vulberta_{cwe_id}"
-
-    if os.path.exists(model_dir):
-        print(f"Found existing model at {model_dir}. Loading...")
-        model = CausalLMWithClassifier.from_pretrained(model_dir)
-        model = model.to(accelerator.device)
-
-        trainer = FileAwareTrainer(
-            model=model,
-            args=training_args,
-            train_dataset=train_dataset,
-            eval_dataset=eval_dataset,
-            compute_metrics=compute_file_metrics_builder(eval_dataset["filename"]),
-            optimizers=(optimizer, scheduler)
-        )   
-        continue 
-    else:
-        print(f"No existing model found at {model_dir}. Finetuning...")
-
     samples = collect_files_for_cwe(cwe_id)
     random.seed(SEED)
     random.shuffle(samples)
@@ -312,15 +294,23 @@ for cwe_id in ALLOWED_CWE_IDS:
         compute_metrics=compute_file_metrics_builder(eval_dataset["filename"]),
         optimizers=(optimizer, scheduler)
     )
+    
+    if os.path.exists(model_dir):
+        print(f"Found existing model at {model_dir}. Loading...")
+        model = CausalLMWithClassifier.from_pretrained(model_dir)
+        model = model.to(accelerator.device)
+        continue 
+    else:
+        print(f"No existing model found at {model_dir}. Finetuning...")
 
-    for param in model.base_model.parameters():
-        param.requires_grad = False
-    for param in model.classifier.parameters():
-        param.requires_grad = True
+        for param in model.base_model.parameters():
+            param.requires_grad = False
+        for param in model.classifier.parameters():
+            param.requires_grad = True
 
-    trainer.train()
-    model.base_model.save_pretrained(model_dir)
-    torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
+        trainer.train()
+        model.base_model.save_pretrained(model_dir)
+        torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
 
 
 def predict_with_chunk_voting(trainer, raw_samples, chunk_size=512, stride=256):
