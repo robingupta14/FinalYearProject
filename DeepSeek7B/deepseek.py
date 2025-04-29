@@ -24,7 +24,7 @@ class CausalLMWithClassifier(nn.Module):
 
     def forward(self, input_ids=None, attention_mask=None, labels=None, **kwargs):
         outputs = self.base_model(input_ids=input_ids, attention_mask=attention_mask, **kwargs)
-        hidden_states = outputs.last_hidden_state
+        hidden_states = outputs.hidden_states[-1]
         pooled_output = hidden_states[:, 0, :]
         logits = self.classifier(pooled_output)
         loss = None
