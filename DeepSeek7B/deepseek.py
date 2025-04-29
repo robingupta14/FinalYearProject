@@ -150,7 +150,6 @@ base_model = Qwen2ForCausalLM.from_pretrained(
     model_path,
     torch_dtype=torch.float16,
     device_map="auto",
-    trust_remote_code=True
 )
 hidden_size = base_model.config.hidden_size
 model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2)
@@ -205,6 +204,8 @@ for cwe_id in ALLOWED_CWE_IDS:
             optimizer.zero_grad()
             batch = {k: v.to(accelerator.device) for k, v in batch.items()}
             with autocast():
+                if 'label' in batch:
+                    batch['labels'] = batch.pop('label')
                 outputs = model(**batch)
             accelerator.backward(outputs.loss)
             optimizer.step()
@@ -218,6 +219,8 @@ for cwe_id in ALLOWED_CWE_IDS:
     with torch.no_grad():
         for batch in tqdm(accelerator.prepare(eval_loader)):
             batch = {k: v.to(accelerator.device) for k, v in batch.items()}
+            if 'label' in batch:
+                batch['labels'] = batch.pop('label')
             outputs = model(**batch)
             all_preds.append(outputs.logits.squeeze(-1))
             all_labels.append(batch["label"])
