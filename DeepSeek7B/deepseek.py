@@ -9,6 +9,7 @@ from sklearn.metrics import precision_recall_fscore_support, accuracy_score, con
 import numpy as np
 from collections import defaultdict
 from tqdm import tqdm
+import torch.nn.functional as F
 from torch.cuda.amp import autocast
 from accelerate import Accelerator, DataLoaderConfiguration
 import torch.nn as nn
@@ -23,13 +24,18 @@ class CausalLMWithClassifier(nn.Module):
         self.classifier = nn.Linear(hidden_size, num_labels)
 
     def forward(self, input_ids=None, attention_mask=None, labels=None, **kwargs):
-        outputs = self.base_model(input_ids=input_ids, attention_mask=attention_mask, **kwargs)
-        hidden_states = outputs.hidden_states[-1]
+        outputs = self.base_model(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            output_hidden_states=True,
+            **kwargs
+        )
+        hidden_states = outputs.hidden_states[-1] 
         pooled_output = hidden_states[:, 0, :]
-        logits = self.classifier(pooled_output)
+        logits = self.classifier(pooled_output).squeeze(-1) 
         loss = None
         if labels is not None:
-            loss = F.binary_cross_entropy_with_logits(logits.view(-1), labels.float())
+            loss = F.binary_cross_entropy_with_logits(logits, labels.float())
 
         return {
             "loss": loss,
