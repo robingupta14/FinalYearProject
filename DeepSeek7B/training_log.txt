@@ -280,3 +280,33 @@ dataloader_config = DataLoaderConfiguration(dispatch_batches=None, split_batches
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 4.62 GiB. GPU 0 has a total capacity of 44.34 GiB of which 804.81 MiB is free. Including non-PyTorch memory, this process has 43.54 GiB memory in use. Of the allocated memory 41.76 GiB is allocated by PyTorch, and 1.47 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
   0%|          | 0/175 [00:05<?, ?it/s]
+Using device: cuda
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|#####     | 1/2 [00:59<00:59, 59.19s/it]Loading checkpoint shards: 100%|##########| 2/2 [01:48<00:00, 53.63s/it]Loading checkpoint shards: 100%|##########| 2/2 [01:48<00:00, 54.47s/it]
+Model is loaded on device: cuda:0
+
+--- Training for CWE-22 ---
+320
+Map:   0%|          | 0/320 [00:00<?, ? examples/s]Map: 100%|##########| 320/320 [00:04<00:00, 68.63 examples/s]Map: 100%|##########| 320/320 [00:04<00:00, 68.09 examples/s]
+Training new model for CWE-22...
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 196, in <module>
+    training_args = TrainingArguments(
+                    ^^^^^^^^^^^^^^^^^^
+TypeError: TrainingArguments.__init__() got an unexpected keyword argument 'evaluation_strategy'
+Using device: cuda
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|#####     | 1/2 [00:02<00:02,  2.48s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:04<00:00,  2.29s/it]Loading checkpoint shards: 100%|##########| 2/2 [00:04<00:00,  2.32s/it]
+Model is loaded on device: cuda:0
+
+--- Training for CWE-22 ---
+320
+Map:   0%|          | 0/320 [00:00<?, ? examples/s]Map: 100%|##########| 320/320 [00:04<00:00, 67.41 examples/s]Map: 100%|##########| 320/320 [00:04<00:00, 66.96 examples/s]
+Training new model for CWE-22...
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/training_args.py:1525: FutureWarning: `evaluation_strategy` is deprecated and will be removed in version 4.46 of 🤗 Transformers. Use `eval_strategy` instead
+  warnings.warn(
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py", line 226, in <module>
+    for param in model.classifier.parameters():
+                 ^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1688, in __getattr__
+    raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+AttributeError: 'LlamaForCausalLM' object has no attribute 'classifier'
