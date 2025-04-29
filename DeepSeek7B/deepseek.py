@@ -268,6 +268,7 @@ for cwe_id in ALLOWED_CWE_IDS:
         device_map="auto",
         trust_remote_code=True
     )
+
     model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2)
     model = model.to(accelerator.device)
 
@@ -307,7 +308,7 @@ for cwe_id in ALLOWED_CWE_IDS:
         param.requires_grad = True
 
     trainer.train()
-    trainer.save_model(model_dir)
+    model.base_model.save_pretrained(model_dir)
     torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
 
 
