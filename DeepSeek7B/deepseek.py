@@ -159,6 +159,7 @@ accelerator = Accelerator()
 model = model.to(accelerator.device)
 
 # FINETUNING
+best_f1 = 0.0
 for cwe_id in ALLOWED_CWE_IDS:
     print(f"\n--- Processing for {cwe_id} ---")
     model_dir = f"./models/vulberta_{cwe_id}"
@@ -218,6 +219,7 @@ for cwe_id in ALLOWED_CWE_IDS:
             scheduler.step()
             running_loss += outputs.loss.item()
         print(f"Training Loss: {running_loss / len(train_loader):.4f}")
+
         model.eval()
         all_preds = []
         all_labels = []
@@ -234,11 +236,18 @@ for cwe_id in ALLOWED_CWE_IDS:
         preds = torch.cat(all_preds)
         labels = torch.cat(all_labels)
         metrics = compute_metrics(preds, labels)
+        f1_score = metrics["f1"]
+
         print(f"\nMetrics after epoch {epoch + 1}:")
         print(metrics)
         print("\nConfusion Matrix:")
         print(confusion_matrix(labels.cpu(), (torch.sigmoid(preds) > 0.5).int().cpu()))
-        
-model.base_model.save_pretrained(model_dir)
-torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
+
+        if f1_score > best_f1:
+            print(f"New best F1 score: {f1_score:.4f}. Saving model for {cwe_id}...")
+            best_f1 = f1_score
+            model.base_model.save_pretrained(model_dir)
+            torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
+
+    print(f"\nFinished training for {cwe_id}")
 tee.close()
