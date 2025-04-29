@@ -16,13 +16,13 @@ import torch.nn as nn
 import sys
 import os
 from transformers import Qwen2ForCausalLM
+from transformers.modeling_outputs import SequenceClassifierOutput
 
 class CausalLMWithClassifier(nn.Module):
     def __init__(self, base_model, hidden_size, num_labels=2):
         super().__init__()
         self.base_model = base_model
         self.classifier = nn.Linear(hidden_size, 1)
-
 
     def forward(self, input_ids=None, attention_mask=None, labels=None, **kwargs):
         outputs = self.base_model(
@@ -31,19 +31,30 @@ class CausalLMWithClassifier(nn.Module):
             output_hidden_states=True,
             **kwargs
         )
-
-        hidden_states = outputs.hidden_states[-1]           
-        pooled_output = hidden_states[:, 0, :]        
-        logits = self.classifier(pooled_output).squeeze(-1)  
+        hidden_states = outputs.hidden_states[-1]
+        pooled_output = hidden_states[:, 0, :]
+        logits = self.classifier(pooled_output).squeeze(-1)
 
         loss = None
         if labels is not None:
             loss = F.binary_cross_entropy_with_logits(logits, labels.float())
 
-        return {
-            "loss": loss,
-            "logits": logits,
-        }
+        return SequenceClassifierOutput(
+            loss=loss,
+            logits=logits.unsqueeze(-1),
+            hidden_states=outputs.hidden_states,
+            attentions=outputs.attentions if hasattr(outputs, "attentions") else None,
+        )
+
+    def from_pretrained(cls, model_dir):
+        base_model = AutoModelForCausalLM.from_pretrained(model_dir)
+
+        classifier_path = os.path.join(model_dir, "classifier.pt")
+        if not os.path.exists(classifier_path):
+            raise FileNotFoundError(f"Classifier head not found at {classifier_path}")
+        classifier = torch.load(classifier_path)
+
+        return cls(base_model=base_model, classifier=classifier)
 
 
 class Tee(object):
@@ -230,11 +241,10 @@ for cwe_id in ALLOWED_CWE_IDS:
         print(f"Found existing model at {model_dir}. Loading...")
         model = CausalLMWithClassifier.from_pretrained(model_dir)
         model = model.to(accelerator.device)
-        continue  # Skip training
+        continue 
     else:
         print(f"No existing model found at {model_dir}. Finetuning...")
 
-    # Collect and tokenize data
     samples = collect_files_for_cwe(cwe_id)
     random.seed(SEED)
     random.shuffle(samples)
@@ -251,7 +261,6 @@ for cwe_id in ALLOWED_CWE_IDS:
     train_dataset = train_test["train"]
     eval_dataset = train_test["test"]
 
-    # Re-initialize model (to avoid weight sharing between CWEs)
     base_model = Qwen2ForCausalLM.from_pretrained(
         model_path,
         torch_dtype=torch.float16,
@@ -298,6 +307,8 @@ for cwe_id in ALLOWED_CWE_IDS:
 
     trainer.train()
     trainer.save_model(model_dir)
+    torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
+
 
 def predict_with_chunk_voting(trainer, raw_samples, chunk_size=512, stride=256):
     true_labels = []
@@ -330,7 +341,7 @@ def predict_with_chunk_voting(trainer, raw_samples, chunk_size=512, stride=256):
             pad_len = max_len - len(chunk["input_ids"])
             chunk["input_ids"] += [tokenizer.pad_token_id] * pad_len
             chunk["attention_mask"] += [0] * pad_len
-            
+
         device = next(trainer.model.parameters()).device
         input_ids = torch.tensor([c["input_ids"] for c in chunks]).to(device)
         attention_mask = torch.tensor([c["attention_mask"] for c in chunks]).to(device)
