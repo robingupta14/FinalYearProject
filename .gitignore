@@ -8,6 +8,6 @@ vulberta_analysis/models
 vulberta_analysis/tmp/
 deepseek-ai/
 deepseek_analysis/slurm*
-deepseek_analysis/training_log
+deepseek_analysis/training_log.txt
 deepseek_analysis/models
 deepseek_analysis/.*

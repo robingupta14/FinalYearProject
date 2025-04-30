@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSequenceClassification, Trainer, TrainingArguments, get_cosine_schedule_with_warmup
+from transformers import AutoTokenizer, AutoModelForCausalLM, get_cosine_schedule_with_warmup
 from torch.optim import AdamW
 from tqdm import tqdm
 import torch
@@ -6,12 +6,10 @@ import os
 from datasets import Dataset
 import random
 from sklearn.metrics import precision_recall_fscore_support, accuracy_score, confusion_matrix
-import numpy as np
-from collections import defaultdict
 from tqdm import tqdm
 import torch.nn.functional as F
 from torch.cuda.amp import autocast
-from accelerate import Accelerator, DataLoaderConfiguration
+from accelerate import Accelerator
 import torch.nn as nn
 import sys
 import os
