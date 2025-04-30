@@ -1,0 +1,24 @@
+SSH TO DOC: 
+
+ssh rg721@shell1.doc.ic.ac.uk
+
+SSH TO GPU MACHINES:
+ssh gpucluster2
+salloc --gres=gpu:1
+
+RUN DEEPSEEK: 
+cd /vol/bitbucket/rg721/FinalYearProject
+source venv/bin/activate
+cd DeepSeek7B && python deepseek.py
+
+PORT FORWARD RESULTS TO VIEW IN BROWSER:
+ssh rg721@gpuvm02 -J rg721@shell1.doc.ic.ac.uk -L 10001:localhost:10001
+
+then in the port forward terminal "jupyter notebook --no-browser --port=10001 --ip=127.0.0.1"
+
+
+-----------
+DISPATCH TASK TO GPU CLUSTER (GPGPU has 48 GB VRAM):
+sbatch --partition gpgpu /vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/run_script.sh  # modify for your own username and directory setup
+
+tail -f ./slurm20-165001.out    # example - modify the slurm-id depending on what the job id is allocated as - displayed in the terminal.
