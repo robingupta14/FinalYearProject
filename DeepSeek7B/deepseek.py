@@ -198,7 +198,7 @@ for cwe_id in ALLOWED_CWE_IDS:
     scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=int(0.1 * num_train_steps), num_training_steps=num_train_steps)
     for param in model.base_model.parameters():
         param.requires_grad = False
-        
+
     for param in model.classifier.parameters():
         param.requires_grad = True
 
