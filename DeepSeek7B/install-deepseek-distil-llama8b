@@ -1,15 +1,12 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer
 from huggingface_hub import snapshot_download
 
-# Set target model
 model_id = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
 target_dir = "../deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
 
-# Download full model snapshot (including tokenizer, config, weights, etc.)
 snapshot_download(
     repo_id=model_id,
     local_dir=target_dir,
-    local_dir_use_symlinks=False  # to make it fully standalone
+    local_dir_use_symlinks=False
 )
 
-print("✅ Model downloaded and loaded into:", target_dir)
+print("Model downloaded and loaded into:", target_dir)
