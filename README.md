@@ -42,3 +42,15 @@ Running the provided Jupyter Notebooks will conduct the analysis in its entirety
 
 # Running the Deepseek Analysis:
 Due to the size of the Deepseek model, an NVIDIA A40 was used (48 GB VRAM) for finetuning. It's unlikely a card with less VRAM will be able to tune the model without crashing, as the model has 1.5 billion parameters and as a result requires lots of VRAM to simply store it. WIthin the deepseek_analysis folder, there is a script to install the [deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B) model locally, and a script that can be dispatched to the GPU cluster via SLURM. Detailed run instructions are within the deepseek folder.
+
+
+# Preprocessing:
+You must install clang 
+```bash
+sudo apt install clang`
+``
+You also need to install the various tree-sitter versions for each language, e.g: 
+```bash
+git clone https://github.com/tree-sitter/tree-sitter-c
+python -c "from tree_sitter import Language; Language.build_library('my-languages.so', ['tree-sitter-c'])"
+```
