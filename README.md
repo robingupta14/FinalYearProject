@@ -48,7 +48,8 @@ Due to the size of the Deepseek model, an NVIDIA A40 was used (48 GB VRAM) for f
 You must install clang 
 ```bash
 sudo apt install clang`
-``
+```
+
 You also need to install the various tree-sitter versions for each language, e.g: 
 ```bash
 git clone https://github.com/tree-sitter/tree-sitter-c
