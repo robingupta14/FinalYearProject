@@ -19,3 +19,4 @@ protobuf==4.25.3
 fsspec>=2023.6.0
 onnxruntime>=1.17.0
 xxhash>=3.4.1
+tree-sitter==0.20.4
