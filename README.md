@@ -58,7 +58,7 @@ nvm install 18
 nvm use 18
 ```
 
-## For the C Parser:
+## For a language specific Parser, e.g: C:
 You also need to install the various tree-sitter versions for each language, e.g: 
 ```bash
 git clone https://github.com/tree-sitter/tree-sitter-c
