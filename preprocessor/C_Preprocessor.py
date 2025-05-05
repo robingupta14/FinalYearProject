@@ -32,7 +32,6 @@ def expand_and_remove_macros(code_bytes):
     finally:
         os.remove(tmp_file_path)
 
-
 # 3) Renaming - Traverse the AST and use a symbol table for scope management
 def rename_identifiers(node, code_bytes, rename_map):
     node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
@@ -78,88 +77,94 @@ def pretty_print_node(node, code_bytes, indent=0):
     for child in node.children:
         pretty_print_node(child, code_bytes, indent + 1)
 
-# 4) Constant folding - Use own symbol table while traversing AST. 
-# 5) Constant expressions - 2 + 4 -> 6, have own evaluator.
-
 def evaluate_expression(node, code_bytes):
-    """Recursively evaluate constant expressions, including nested and parenthesized ones."""
+    if node.type == 'parenthesized_expression':
+        return evaluate_expression(node.children[1], code_bytes)
+
     if node.type == 'number_literal':
         try:
             return int(code_bytes[node.start_byte:node.end_byte].decode('utf-8'))
         except ValueError:
             return None
 
-    elif node.type == 'parenthesized_expression':
-        return evaluate_expression(node.children[1], code_bytes)  # skip surrounding parens
+    if node.type == 'binary_expression':
+        left = evaluate_expression(node.child_by_field_name('left'), code_bytes)
+        right = evaluate_expression(node.child_by_field_name('right'), code_bytes)
+        operator_node = node.child_by_field_name('operator')
+        op = code_bytes[operator_node.start_byte:operator_node.end_byte].decode('utf-8')
 
-    elif node.type == 'binary_expression':
-        left = node.child_by_field_name('left')
-        right = node.child_by_field_name('right')
-        operator = node.child_by_field_name('operator')
-
-        left_val = evaluate_expression(left, code_bytes)
-        right_val = evaluate_expression(right, code_bytes)
-
-        if left_val is not None and right_val is not None:
-            op = code_bytes[operator.start_byte:operator.end_byte].decode('utf-8')
-            try:
+        try:
+            if left is not None and right is not None:
                 if op == '+':
-                    return left_val + right_val
+                    return left + right
                 elif op == '-':
-                    return left_val - right_val
+                    return left - right
                 elif op == '*':
-                    return left_val * right_val
+                    return left * right
                 elif op == '/':
-                    return left_val // right_val if right_val != 0 else None
+                    return left // right
                 elif op == '%':
-                    return left_val % right_val if right_val != 0 else None
-            except ZeroDivisionError:
-                return None
+                    return left % right
+        except Exception:
+            return None
     return None
 
-def fold_constants(node, code_bytes, replacements):
+def collect_constant_folds(node, code_bytes, replacements):
+    value = evaluate_expression(node, code_bytes)
+    if value is not None:
+        replacements.append((node.start_byte, node.end_byte, str(value)))
+        return
+
     for child in node.children:
-        fold_constants(child, code_bytes, replacements)
+        collect_constant_folds(child, code_bytes, replacements)
 
-    result = evaluate_expression(node, code_bytes)
-    if result is not None:
-        replacements.append((node.start_byte, node.end_byte, str(result)))
-
-def apply_constant_folding(code_bytes, replacements):
+def apply_replacements(code_bytes, replacements):
+    replacements = sorted(replacements, key=lambda x: x[0])
     new_code = bytearray()
     last_index = 0
-    for start, end, result in sorted(replacements, key=lambda x: x[0]):
+
+    for start, end, result in replacements:
         new_code.extend(code_bytes[last_index:start])
         new_code.extend(result.encode('utf-8'))
         last_index = end
+
     new_code.extend(code_bytes[last_index:])
     return bytes(new_code)
 
-def preprocess_c(code):
-    #code = expand_and_remove_macros(code)
-    #code = remove_comments(code)
+def fold_constants(code: bytes):
     tree = parser.parse(code)
+    root = tree.root_node
 
     replacements = []
-    fold_constants(tree.root_node, code, replacements)
-    code = apply_constant_folding(code, replacements)
+    collect_constant_folds(root, code, replacements)
 
-    #rename_map = {}
-    #tree = parser.parse(code)
-    #rename_identifiers(tree.root_node, code, rename_map)
-    #code = replace_identifiers(code, rename_map)
+    folded_code = apply_replacements(code, replacements)
+    return folded_code
 
-    pretty_print_node(tree.root_node, code)
 
-    return code.decode('utf-8')
+def preprocess_c(code):
+    expanded_code = expand_and_remove_macros(code)
+    cleaned_code = remove_comments(expanded_code)
+    folded_code = fold_constants(cleaned_code)
+    tree = parser.parse(folded_code)
+
+    rename_map = {}
+    tree = parser.parse(folded_code)
+    rename_identifiers(tree.root_node, folded_code, rename_map)
+    renamed_code = replace_identifiers(folded_code, rename_map)
+
+    pretty_print_node(tree.root_node, folded_code)
+
+    return renamed_code.decode('utf-8')
 
 code = b"""
 # define VALUE 42
 // bury it i wont let
 /* you bury it i wont let you smother it i wont let you murder it our time is running out */
 int main() {
-    int x = (42 + 42) * 42;
+    int x = (VALUE + VALUE) * VALUE;
     return x;
 }
 """
+
 print(preprocess_c(code))
