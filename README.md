@@ -45,13 +45,31 @@ Due to the size of the Deepseek model, an NVIDIA A40 was used (48 GB VRAM) for f
 
 
 # Preprocessing:
-You must install clang 
+While not strictly necessary to run the project, the following serves as a guide to generating the parsers. They are stored in the parsers directory - so again - not necessary to rebuild the parsers yourself.
+
+## For all Parsers
+You must install clang, NVM and Node.js
 ```bash
 sudo apt install clang
+sudo apt install nodejs npm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.bashrc
+nvm install 18
+nvm use 18
 ```
 
+## For the C Parser:
 You also need to install the various tree-sitter versions for each language, e.g: 
 ```bash
 git clone https://github.com/tree-sitter/tree-sitter-c
+```
+Navigate into the tree-sitter-c directory, and run 
+```bash
+npm install
+npx tree-sitter generate
+```
+From the top level of the repository, then run:
+```bash
 python -c "from tree_sitter import Language; Language.build_library('my-languages.so', ['tree-sitter-c'])"
 ```
+
