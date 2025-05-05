@@ -1,3 +1,8 @@
+import subprocess
+import os
+import re
+import string
+from tree_sitter import Language, Parser
 # Extraneous whitespace, formatting -> Not stored in tree sitter ASTs
     # comments, documentation, -> delete comment nodes; c doesn't have docstrings.
     # Can't safely remove prints and exception strings in C because they can cause segfaults -> that is a CWE.
@@ -19,4 +24,3 @@
 # Macro expansion	clang -E for C/C++, or Roslyn for C#
 # Identifier renaming	Tree-sitter AST + symbol table
 # Constant folding	Custom AST evaluation
-# Loop canonicalization	Custom AST transformation
