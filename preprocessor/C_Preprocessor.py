@@ -1,8 +1,6 @@
 # GOAL: Carry out AST Generation  using the generated Parser from Tree-sitter:
 
-# 1) Extraneous whitespace, formatting -> Removed by this step as it's not stored in Tree-sitter ASTs.
-    # comments, documentation, -> delete comment nodes; c doesn't have docstrings.
-    # Can't safely remove prints and exception strings in C because they can cause segfaults -> that is a CWE.
+
 
 from tree_sitter import Language, Parser
 import subprocess
@@ -10,11 +8,12 @@ import tempfile
 import re
 import os
 
+# 1) Extraneous whitespace, formatting -> Removed by this step as it's not stored in Tree-sitter ASTs.
 C_LANGUAGE = Language('/mnt/c/Users/robpi/Desktop/FYP/FinalYearProject/parsers/c-parser.so', 'c')
 parser = Parser()
 parser.set_language(C_LANGUAGE)
 
-# 2) Macro Expansion is the process of replacing referential definitions with the actual value.
+# 2) Macro Expansion
 def expand_and_remove_macros(code_bytes):
     with tempfile.NamedTemporaryFile(delete=False, suffix=".c") as tmp_file:
         tmp_file.write(code_bytes)
@@ -32,7 +31,15 @@ def expand_and_remove_macros(code_bytes):
     finally:
         os.remove(tmp_file_path)
 
-# 3) Renaming - Traverse the AST and use a symbol table for scope management
+# 3)  Comment removal. C doesn't have docstrings.
+# Can't safely remove prints and exception strings in C because they can cause segfaults -> that is a CWE.
+def remove_comments(code_bytes):
+    code_str = code_bytes.decode('utf-8', errors='replace')
+    code_str = re.sub(r'//.*', '', code_str)
+    code_str = re.sub(r'/\*.*?\*/', '', code_str, flags=re.DOTALL)
+    return code_str.encode('utf-8')
+
+# 4) Renaming - Traverse the AST and use a symbol table for scope management
 def rename_identifiers(node, code_bytes, rename_map):
     node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
 
@@ -64,18 +71,7 @@ def replace_identifiers(code_bytes, rename_map):
         code_str = re.sub(r'\b' + re.escape(old_name) + r'\b', new_name, code_str)
     return code_str.encode('utf-8')
 
-def remove_comments(code_bytes):
-    code_str = code_bytes.decode('utf-8', errors='replace')
-    code_str = re.sub(r'//.*', '', code_str)
-    code_str = re.sub(r'/\*.*?\*/', '', code_str, flags=re.DOTALL)
-    return code_str.encode('utf-8')
-
-def pretty_print_node(node, code_bytes, indent=0):
-    indent_str = '  ' * indent
-    node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
-    print(f"{indent_str}{node.type} [{node.start_point} - {node.end_point}] → '{node_text.strip()}'")
-    for child in node.children:
-        pretty_print_node(child, code_bytes, indent + 1)
+# 5) Constant folding - 2 + 4 -> 6, have own evaluator.
 
 def evaluate_expression(node, code_bytes):
     if node.type == 'parenthesized_expression':
@@ -141,6 +137,14 @@ def fold_constants(code: bytes):
     folded_code = apply_replacements(code, replacements)
     return folded_code
 
+# 6) Actual preprocessing functions
+
+def pretty_print_node(node, code_bytes, indent=0):
+    indent_str = '  ' * indent
+    node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
+    print(f"{indent_str}{node.type} [{node.start_point} - {node.end_point}] → '{node_text.strip()}'")
+    for child in node.children:
+        pretty_print_node(child, code_bytes, indent + 1)
 
 def preprocess_c(code):
     expanded_code = expand_and_remove_macros(code)
