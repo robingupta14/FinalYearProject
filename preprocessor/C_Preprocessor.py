@@ -42,25 +42,28 @@ def remove_comments(code_bytes):
 # 4) Renaming - Traverse the AST and use a symbol table for scope management
 def rename_identifiers(node, code_bytes, rename_map):
     node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
+    parent = node.parent
 
     if node.type == "identifier":
-        parent = node.parent
         is_function_name = (
             parent is not None and
             parent.type == "function_declarator" and
             parent.child_by_field_name("declarator") == node
         )
-
         if is_function_name:
             if node_text not in rename_map:
-                new_name = f"fn_{len(rename_map)}"
-                rename_map[node_text] = new_name
-            print(f"Renaming function: {node_text} -> {rename_map[node_text]}")
+                rename_map[node_text] = f"fn_{len(rename_map)}"
         else:
             if node_text not in rename_map:
-                new_name = f"var_{len(rename_map)}"
-                rename_map[node_text] = new_name
-            print(f"Renaming variable: {node_text} -> {rename_map[node_text]}")
+                rename_map[node_text] = f"var_{len(rename_map)}"
+
+    elif node.type == "type_identifier":
+        is_struct_name = (
+            parent is not None and parent.type == "struct_specifier"
+        )
+        if is_struct_name:
+            if node_text not in rename_map:
+                rename_map[node_text] = f"struct_{len(rename_map)}"
 
     for child in node.children:
         rename_identifiers(child, code_bytes, rename_map)
@@ -98,9 +101,19 @@ def evaluate_expression(node, code_bytes):
                 elif op == '*':
                     return left * right
                 elif op == '/':
-                    return left // right
+                    return left // right if right != 0 else None
                 elif op == '%':
-                    return left % right
+                    return left % right if right != 0 else None
+                elif op == '<<':
+                    return left << right
+                elif op == '>>':
+                    return left >> right
+                elif op == '|':
+                    return left | right
+                elif op == '&':
+                    return left & right
+                elif op == '^':
+                    return left ^ right
         except Exception:
             return None
     return None
@@ -165,6 +178,9 @@ code = b"""
 # define VALUE 42
 // bury it i wont let
 /* you bury it i wont let you smother it i wont let you murder it our time is running out */
+
+struct Hello {};
+
 int main() {
     int x = (VALUE + VALUE) * VALUE;
     return x;
