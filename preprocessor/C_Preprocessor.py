@@ -183,7 +183,13 @@ struct Hello {};
 
 int main() {
     int x = (VALUE + VALUE) * VALUE;
-    return x;
+
+    if (x > 0) {
+       int x = 19;
+       y = x + x;
+    }
+
+    return x
 }
 """
 
