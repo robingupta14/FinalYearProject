@@ -1,7 +1,4 @@
 # GOAL: Carry out AST Generation  using the generated Parser from Tree-sitter:
-
-
-
 from tree_sitter import Language, Parser
 import subprocess
 import tempfile
