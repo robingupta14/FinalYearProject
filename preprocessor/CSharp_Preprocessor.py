@@ -37,13 +37,100 @@ def remove_exception_and_print_text(code_bytes):
     return code_str.encode('utf-8')
 
 # 5) Renaming
+def collect_declared_identifiers(node, code_bytes, declared_ids):
+    node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
+    parent = node.parent
 
+    if node.type == "identifier":
+        if parent and parent.type in (
+            "init_declarator",
+            "parameter_declaration",
+            "enumerator",
+            "variable_declarator",
+            "field_declaration",
+            "method_declaration",
+            "class_declaration"
+        ):
+            declared_ids.add(node_text)
+
+        elif parent and parent.type in ("function_declarator", "function_definition") and parent.child_by_field_name("declarator") == node:
+            declared_ids.add(node_text)
+
+        elif parent and parent.type in ("class_specifier", "struct_specifier"):
+            declared_ids.add(node_text)
+    
+    elif node.type == "modifier":
+        if parent and parent.type in (
+            "method_declaration",
+        ):
+            declared_ids.add(node_text)
+
+    elif node.type == "type_identifier":
+        if parent and parent.type in ("class_specifier", "struct_specifier", "enum_specifier"):
+            declared_ids.add(node_text)
+
+    elif node.type == "namespace_identifier":
+        if parent and parent.type == "namespace_definition":
+            declared_ids.add(node_text)
+
+    for child in node.children:
+        collect_declared_identifiers(child, code_bytes, declared_ids)
+
+def rename_identifiers(node, code_bytes, declared_ids, rename_map):
+    node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
+    parent = node.parent
+
+    if node_text in declared_ids and node_text not in rename_map:
+        if node.type == "namespace_identifier":
+            if parent and parent.type == "namespace_definition":
+                rename_map[node_text] = f"ns_{len(rename_map)}"
+
+        elif node.type == "identifier":
+            is_function = (
+                parent and parent.type in ("function_declarator", "function_definition") and
+                parent.child_by_field_name("declarator") == node
+            )
+            is_class = parent and parent.type == "class_specifier"
+            is_enum = parent and parent.type == "enumerator"
+            is_param = parent and parent.type == "parameter_declaration"
+            is_field = parent and parent.type == "field_declaration"
+
+            if is_function:
+                rename_map[node_text] = f"fn_{len(rename_map)}"
+            elif is_class:
+                rename_map[node_text] = f"class_{len(rename_map)}"
+            elif is_enum:
+                rename_map[node_text] = f"enum_{len(rename_map)}"
+            elif is_param:
+                rename_map[node_text] = f"param_{len(rename_map)}"
+            elif is_field:
+                rename_map[node_text] = f"field_{len(rename_map)}"
+            else:
+                rename_map[node_text] = f"var_{len(rename_map)}"
+
+        elif node.type == "type_identifier":
+            if parent and parent.type == "enum_specifier":
+                rename_map[node_text] = f"enumtype_{len(rename_map)}"
+            elif parent and parent.type == "class_specifier":
+                rename_map[node_text] = f"class_{len(rename_map)}"
+            else:
+                rename_map[node_text] = f"type_{len(rename_map)}"
+
+    for child in node.children:
+        rename_identifiers(child, code_bytes, declared_ids, rename_map)
+
+
+def replace_identifiers(code_bytes, rename_map):
+    code_str = code_bytes.decode('utf-8', errors='replace')
+    for old_name, new_name in sorted(rename_map.items(), key=lambda x: -len(x[0])):
+        code_str = re.sub(r'\b' + re.escape(old_name) + r'\b', new_name, code_str)
+    return code_str.encode('utf-8')
 
 # 7) Actual Preprocessing Functions
 def pretty_print_node(node, code_bytes, indent=0):
     indent_str = '  ' * indent
     node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace').strip().replace('\n', '\\n')
-    print(f"{indent_str}{node.type} [{node.start_point} - {node.end_point}] → '{node_text}'")
+    print(f"{indent_str}{node.type} [{node.start_point} - {node.end_point}] → '{node_text}', {node.type}")
     for child in node.children:
         pretty_print_node(child, code_bytes, indent + 1)
 
@@ -56,17 +143,17 @@ def preprocess_csharp(code):
     # folded_code = fold_constants(cleaned_code)
     tree = parser.parse(cleaned_code)
 
-    # declared_ids = set()
-    # collect_declared_identifiers(tree.root_node, folded_code, declared_ids)
-    # print(f"declared ids: {declared_ids}")
-    # rename_map = {}
-    # rename_identifiers(tree.root_node, folded_code, declared_ids, rename_map)
-    # print(f"rename map: {rename_map}")
-    # processed_code = replace_identifiers(folded_code, rename_map)
+    declared_ids = set()
+    collect_declared_identifiers(tree.root_node, cleaned_code, declared_ids)
+    print(f"declared ids: {declared_ids}")
+    rename_map = {}
+    rename_identifiers(tree.root_node, cleaned_code, declared_ids, rename_map)
+    print(f"rename map: {rename_map}")
+    processed_code = replace_identifiers(cleaned_code, rename_map)
 
-    pretty_print_node(tree.root_node, cleaned_code)
+    pretty_print_node(tree.root_node, processed_code)
 
-    return cleaned_code.decode('utf-8')
+    return processed_code.decode('utf-8')
 
 code = b"""
 using System;

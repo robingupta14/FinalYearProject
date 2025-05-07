@@ -225,7 +225,7 @@ enum Stuffs {
 
 // hello world ewfdwe
 namespace trolladwqadwqdqwdwqdqmos {
-    void func() {
+    void func(int x, int y) {
         std::cout << "tr" << std::endl;
     }
 }
