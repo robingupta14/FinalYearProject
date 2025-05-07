@@ -9,6 +9,28 @@ import os
 cpp_lang = get_language('c_sharp')
 parser = get_parser('c_sharp')
 
+# 2) Import removal
+def remove_using(code_bytes):
+    code_str = code_bytes.decode('utf-8', errors='replace')
+    cleaned_code = re.sub(r'^\s*using\s+[\w\.]+;\s*$', '', code_str, flags=re.MULTILINE)
+    return cleaned_code.encode('utf-8')
+
+# 3)  Comment removal. C Sharp has docstrings.
+def remove_comments(code_bytes):
+    code_str = code_bytes.decode('utf-8', errors='replace')
+    code_str = re.sub(r'//.*', '', code_str)
+    code_str = re.sub(r'/\*.*?\*/', '', code_str, flags=re.DOTALL)
+    return code_str.encode('utf-8')
+
+def remove_docstrings(code_bytes):
+    code_str = code_bytes.decode('utf-8', errors='replace')
+    code_str = re.sub(r'///\s*<[^>]+>.*?(?=\n)', '', code_str, flags=re.DOTALL)
+    code_str = re.sub(r'///.*', '', code_str)
+    return code_str.encode('utf-8')
+
+# 4) Exception line removal, Print removal.
+
+# 7) Actual Preprocessing Functions
 def pretty_print_node(node, code_bytes, indent=0):
     indent_str = '  ' * indent
     node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace').strip().replace('\n', '\\n')
@@ -16,12 +38,13 @@ def pretty_print_node(node, code_bytes, indent=0):
     for child in node.children:
         pretty_print_node(child, code_bytes, indent + 1)
 
+
 def preprocess_csharp(code):
-    # importless_code = remove_using(code)
-    # expanded_code = expand_and_remove_macros(importless_code)
-    # cleaned_code = remove_comments(expanded_code)
+    importless_code = remove_using(code)
+    commentless_code = remove_comments(importless_code)
+    cleaned_code = remove_docstrings(commentless_code)
     # folded_code = fold_constants(cleaned_code)
-    tree = parser.parse(code)
+    tree = parser.parse(cleaned_code)
 
     # declared_ids = set()
     # collect_declared_identifiers(tree.root_node, folded_code, declared_ids)
@@ -31,13 +54,17 @@ def preprocess_csharp(code):
     # print(f"rename map: {rename_map}")
     # processed_code = replace_identifiers(folded_code, rename_map)
 
-    pretty_print_node(tree.root_node, code)
+    pretty_print_node(tree.root_node, cleaned_code)
 
-    return code.decode('utf-8')
+    return cleaned_code.decode('utf-8')
 
 code = b"""
 using System;
 
+// ok ok
+/* OK ? */
+
+/// this function skibidi
 public class HelloWorld
 {
     public static void Main(string[] args)
