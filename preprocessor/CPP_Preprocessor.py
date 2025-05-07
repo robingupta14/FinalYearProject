@@ -10,7 +10,13 @@ import os
 cpp_lang = get_language('cpp')
 parser = get_parser('cpp')
 
-# 2) Macro Expansion.
+# 2) Macro Expansion and Library removal
+
+def remove_includes(code_bytes):
+    code_str = code_bytes.decode('utf-8', errors='replace')
+    cleaned_code = re.sub(r'^\s*#\s*include\s+[<"].*[>"].*$', '', code_str, flags=re.MULTILINE)
+    return cleaned_code.encode('utf-8')
+
 def expand_and_remove_macros(code_bytes):
     with tempfile.NamedTemporaryFile(delete=False, suffix=".cpp") as tmp_file:
         tmp_file.write(code_bytes)
@@ -37,39 +43,61 @@ def remove_comments(code_bytes):
 
 
 # 4) Renaming - Traverse the AST and use a symbol table for scope management. C++ has classes, name spaces as well.
-def rename_identifiers(node, code_bytes, rename_map):
+def collect_declared_identifiers(node, code_bytes, declared_ids):
     node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
     parent = node.parent
 
     if node.type == "identifier":
-        is_function_name = (
-            parent is not None and (
-                (parent.type == "function_declarator" and parent.child_by_field_name("declarator") == node) or
-                (parent.type == "function_definition" and parent.child_by_field_name("declarator") == node)
-            )
-        )
-        is_method_name = (
-            parent is not None and parent.type == "field_declaration" and
-            parent.child_by_field_name("declarator") == node
-        )
+        if parent and parent.type in (
+            "init_declarator", "parameter_declaration", "namespace_identifier", "field_declaration",
+            "namespace_definition", "enumerator", "template_type_parameter"
+        ):
+            declared_ids.add(node_text)
 
-        if is_function_name or is_method_name:
-            if node_text not in rename_map:
-                rename_map[node_text] = f"fn_{len(rename_map)}"
-        else:
-            if node_text not in rename_map:
-                rename_map[node_text] = f"var_{len(rename_map)}"
+        elif parent and parent.type == "function_declarator" and parent.child_by_field_name("declarator") == node:
+            declared_ids.add(node_text)
+
+        elif parent and parent.type in ("class_specifier", "struct_specifier"):
+            declared_ids.add(node_text)
 
     elif node.type == "type_identifier":
-        is_struct_like = parent and parent.type in {
-            "struct_specifier", "class_specifier", "enum_specifier"
-        }
-        if is_struct_like:
-            if node_text not in rename_map:
+        if parent and parent.type in ("class_specifier", "struct_specifier"):
+            declared_ids.add(node_text)
+
+    for child in node.children:
+        collect_declared_identifiers(child, code_bytes, declared_ids)
+
+def rename_identifiers(node, code_bytes, declared_ids, rename_map):
+    node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
+
+    if node_text in declared_ids and node_text not in rename_map:
+        parent = node.parent
+
+        if node.type == "identifier":
+            is_function_name = (
+                parent and parent.type == "function_declarator" and
+                parent.child_by_field_name("declarator") == node
+            )
+            is_class_name = parent and parent.type == "class_specifier"
+            is_namespace_name = parent and parent.type == "namespace_identifier"
+
+            if is_function_name:
+                rename_map[node_text] = f"fn_{len(rename_map)}"
+            elif is_class_name:
+                rename_map[node_text] = f"class_{len(rename_map)}"
+            elif is_namespace_name:
+                rename_map[node_text] = f"ns_{len(rename_map)}"
+            else:
+                rename_map[node_text] = f"var_{len(rename_map)}"
+
+        elif node.type == "type_identifier":
+            if parent and parent.type == "class_specifier":
+                rename_map[node_text] = f"class_{len(rename_map)}"
+            else:
                 rename_map[node_text] = f"struct_{len(rename_map)}"
 
     for child in node.children:
-        rename_identifiers(child, code_bytes, rename_map)
+        rename_identifiers(child, code_bytes, declared_ids, rename_map)
 
 def replace_identifiers(code_bytes, rename_map):
     code_str = code_bytes.decode('utf-8', errors='replace')
@@ -87,25 +115,40 @@ def pretty_print_node(node, code_bytes, indent=0):
         pretty_print_node(child, code_bytes, indent + 1)
 
 def preprocess_cpp(code):
-    expanded_code = expand_and_remove_macros(code)
+    importless_code = remove_includes(code)
+    expanded_code = expand_and_remove_macros(importless_code)
     cleaned_code = remove_comments(expanded_code)
     # folded_code = fold_constants(cleaned_code)
     tree = parser.parse(cleaned_code)
 
+    declared_ids = set()
+    collect_declared_identifiers(tree.root_node, cleaned_code, declared_ids)
     rename_map = {}
-    tree = parser.parse(cleaned_code)
-    rename_identifiers(tree.root_node, cleaned_code, rename_map)
-    renamed_code = replace_identifiers(cleaned_code, rename_map)
+    rename_identifiers(tree.root_node, cleaned_code, declared_ids, rename_map)
+    processed_code = replace_identifiers(cleaned_code, rename_map)
 
-    pretty_print_node(tree.root_node, renamed_code)
+    pretty_print_node(tree.root_node, processed_code)
 
-    return renamed_code.decode('utf-8')
+    return processed_code.decode('utf-8')
 
 code = b"""
 # define VALUE 42
-#include <iostream>
-# hello world ewfdwe
+# include <iostream>
+
+class Hehe {
+
+};
+
+// hello world ewfdwe
+namespace trollamos {
+    void func() {
+        std::cout << "tr" << std::endl;
+    }
+}
+
 int main() {
+    trollamos::func();
+    Hehe two;
     int x = VALUE * VALUE;
     std::cout << x << std::endl;
     return 0;

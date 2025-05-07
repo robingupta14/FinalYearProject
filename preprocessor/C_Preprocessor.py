@@ -48,14 +48,14 @@ def collect_declared_identifiers(node, code_bytes, declared_ids):
     parent = node.parent
 
     if node.type == "identifier":
-        if parent and parent.type in ("init_declarator", "parameter_declaration"):
+        if parent and parent.type in ("init_declarator", "parameter_declaration", "enumerator"):
             declared_ids.add(node_text)
 
         elif parent and parent.type == "function_declarator" and parent.child_by_field_name("declarator") == node:
             declared_ids.add(node_text)
 
     elif node.type == "type_identifier":
-        if parent and parent.type == "struct_specifier":
+        if parent and parent.type in ("struct_specifier", "enum_specifier"):
             declared_ids.add(node_text)
 
     for child in node.children:
@@ -79,7 +79,6 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
 
     for child in node.children:
         rename_identifiers(child, code_bytes, declared_ids, rename_map)
-
 
 def replace_identifiers(code_bytes, rename_map):
     code_str = code_bytes.decode('utf-8', errors='replace')
@@ -200,6 +199,10 @@ code = b"""
 
 # include <stdlib.h>
 struct Hello {};
+
+enum Stuffs {
+ E, B, C
+};
 
 int main() {
     int x = (VALUE + VALUE) * VALUE;
