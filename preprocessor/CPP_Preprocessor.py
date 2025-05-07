@@ -57,32 +57,38 @@ def collect_declared_identifiers(node, code_bytes, declared_ids):
             declared_ids.add(node_text)
 
     elif node.type == "type_identifier":
-        if parent and parent.type in ("class_specifier", "struct_specifier"):
+        if parent and parent.type in ("class_specifier", "struct_specifier", "enum_specifier"):
             declared_ids.add(node_text)
-
+    
+    elif node.type == "namespace_identifier":
+        if parent.type in ("namespace_definition"):
+            declared_ids.add(node_text)
     for child in node.children:
         collect_declared_identifiers(child, code_bytes, declared_ids)
 
 def rename_identifiers(node, code_bytes, declared_ids, rename_map):
     node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
-
+    parent = node.parent
+    # if (parent is not None):
+    #     if (parent.type == "namespace_definition"):
+    #         print(node)
+    #         print("\n")
+        
     if node_text in declared_ids and node_text not in rename_map:
-        parent = node.parent
-
+        print(node.type)
+        if node.type == "declaration_list" or node.type == "namespace_identifier":
+            if (parent.type == "namespace_definition"):
+                rename_map[node_text] = f"ns_{len(rename_map)}"
         if node.type == "identifier":
             is_function_name = (
                 parent and parent.type == "function_declarator" and
                 parent.child_by_field_name("declarator") == node
             )
             is_class_name = parent and parent.type == "class_specifier"
-            is_namespace_name = parent and parent.type == "namespace_identifier"
-
             if is_function_name:
                 rename_map[node_text] = f"fn_{len(rename_map)}"
             elif is_class_name:
                 rename_map[node_text] = f"class_{len(rename_map)}"
-            elif is_namespace_name:
-                rename_map[node_text] = f"ns_{len(rename_map)}"
             elif parent and parent.type == "enumerator":
                 rename_map[node_text] = f"enum_{len(rename_map)}"
             else:
@@ -123,13 +129,16 @@ def preprocess_cpp(code):
 
     declared_ids = set()
     collect_declared_identifiers(tree.root_node, cleaned_code, declared_ids)
+    # print(f"declared ids: {declared_ids}")
     rename_map = {}
     rename_identifiers(tree.root_node, cleaned_code, declared_ids, rename_map)
+    # print(f"rename map: {rename_map}")
     processed_code = replace_identifiers(cleaned_code, rename_map)
 
-    pretty_print_node(tree.root_node, processed_code)
+    # pretty_print_node(tree.root_node, processed_code)
 
     return processed_code.decode('utf-8')
+
 
 code = b"""
 # define VALUE 42
@@ -144,14 +153,14 @@ enum Stuffs {
 };
 
 // hello world ewfdwe
-namespace trollamos {
+namespace trolladwqadwqdqwdwqdqmos {
     void func() {
         std::cout << "tr" << std::endl;
     }
 }
 
 int main() {
-    trollamos::func();
+    trolladwqadwqdqwdwqdqmos::func();
     Hehe two;
     int x = VALUE * VALUE;
     std::cout << x << std::endl;
