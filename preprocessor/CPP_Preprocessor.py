@@ -68,11 +68,7 @@ def collect_declared_identifiers(node, code_bytes, declared_ids):
 def rename_identifiers(node, code_bytes, declared_ids, rename_map):
     node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
     parent = node.parent
-    # if (parent is not None):
-    #     if (parent.type == "namespace_definition"):
-    #         print(node)
-    #         print("\n")
-        
+
     if node_text in declared_ids and node_text not in rename_map:
         print(node.type)
         if node.type == "declaration_list" or node.type == "namespace_identifier":
