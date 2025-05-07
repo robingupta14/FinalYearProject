@@ -5,7 +5,6 @@ import subprocess
 import re
 import os
 
-
 # 1) Extraneous whitespace, formatting -> Removed by this step as it's not stored in Tree-sitter ASTs.
 cpp_lang = get_language('cpp')
 parser = get_parser('cpp')
