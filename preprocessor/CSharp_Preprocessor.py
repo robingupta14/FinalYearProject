@@ -29,6 +29,15 @@ def remove_docstrings(code_bytes):
     return code_str.encode('utf-8')
 
 # 4) Exception line removal, Print removal.
+def remove_exception_and_print_text(code_bytes):
+    code_str = code_bytes.decode('utf-8', errors='replace')
+    code_str = re.sub(r'\bConsole\.WriteLine\s*\(.*?\)\s*;', '', code_str)
+    code_str = re.sub(r'\bConsole\.Write\s*\(.*?\)\s*;', '', code_str)
+    code_str = re.sub(r'(throw\s+new\s+\w+\s*\()\s*".*?"(\s*\))', r'\1\2', code_str)
+    return code_str.encode('utf-8')
+
+# 5) Renaming
+
 
 # 7) Actual Preprocessing Functions
 def pretty_print_node(node, code_bytes, indent=0):
@@ -42,7 +51,8 @@ def pretty_print_node(node, code_bytes, indent=0):
 def preprocess_csharp(code):
     importless_code = remove_using(code)
     commentless_code = remove_comments(importless_code)
-    cleaned_code = remove_docstrings(commentless_code)
+    documentationless_code = remove_docstrings(commentless_code)
+    cleaned_code = remove_exception_and_print_text(documentationless_code)
     # folded_code = fold_constants(cleaned_code)
     tree = parser.parse(cleaned_code)
 
@@ -70,6 +80,7 @@ public class HelloWorld
     public static void Main(string[] args)
     {
         Console.WriteLine ("popbop");
+        return 42;
     }
 }
 """
