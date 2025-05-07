@@ -67,15 +67,19 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
     if node_text in declared_ids and node_text not in rename_map:
         if node.type == "identifier":
             parent = node.parent
-            is_function_name = (
-                parent and parent.type == "function_declarator" and
-                parent.child_by_field_name("declarator") == node
-            )
-            rename_map[node_text] = (
-                f"fn_{len(rename_map)}" if is_function_name else f"var_{len(rename_map)}"
-            )
+            if parent and parent.type == "function_declarator" and parent.child_by_field_name("declarator") == node:
+                rename_map[node_text] = f"fn_{len(rename_map)}"
+            elif parent and parent.type == "enumerator":
+                rename_map[node_text] = f"enum_{len(rename_map)}"
+            else:
+                rename_map[node_text] = f"var_{len(rename_map)}"
+
         elif node.type == "type_identifier":
-            rename_map[node_text] = f"struct_{len(rename_map)}"
+            parent = node.parent
+            if parent and parent.type == "struct_specifier":
+                rename_map[node_text] = f"struct_{len(rename_map)}"
+            elif parent and parent.type == "enum_specifier":
+                rename_map[node_text] = f"enumtype_{len(rename_map)}"
 
     for child in node.children:
         rename_identifiers(child, code_bytes, declared_ids, rename_map)
