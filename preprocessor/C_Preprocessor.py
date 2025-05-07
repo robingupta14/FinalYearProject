@@ -54,12 +54,16 @@ def collect_declared_identifiers(node, code_bytes, declared_ids):
         elif parent and parent.type == "function_declarator" and parent.child_by_field_name("declarator") == node:
             declared_ids.add(node_text)
 
+        elif parent and parent.type == "enum_specifier":
+            declared_ids.add(node_text)
+
     elif node.type == "type_identifier":
         if parent and parent.type in ("struct_specifier", "enum_specifier"):
             declared_ids.add(node_text)
 
     for child in node.children:
         collect_declared_identifiers(child, code_bytes, declared_ids)
+
 
 def rename_identifiers(node, code_bytes, declared_ids, rename_map):
     node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')

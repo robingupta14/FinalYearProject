@@ -41,17 +41,13 @@ def remove_comments(code_bytes):
     code_str = re.sub(r'/\*.*?\*/', '', code_str, flags=re.DOTALL)
     return code_str.encode('utf-8')
 
-
 # 4) Renaming - Traverse the AST and use a symbol table for scope management. C++ has classes, name spaces as well.
 def collect_declared_identifiers(node, code_bytes, declared_ids):
     node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
     parent = node.parent
 
     if node.type == "identifier":
-        if parent and parent.type in (
-            "init_declarator", "parameter_declaration", "namespace_identifier", "field_declaration",
-            "namespace_definition", "enumerator", "template_type_parameter"
-        ):
+        if parent and parent.type in ("init_declarator", "parameter_declaration", "enumerator"):
             declared_ids.add(node_text)
 
         elif parent and parent.type == "function_declarator" and parent.child_by_field_name("declarator") == node:
@@ -87,12 +83,16 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
                 rename_map[node_text] = f"class_{len(rename_map)}"
             elif is_namespace_name:
                 rename_map[node_text] = f"ns_{len(rename_map)}"
+            elif parent and parent.type == "enumerator":
+                rename_map[node_text] = f"enum_{len(rename_map)}"
             else:
                 rename_map[node_text] = f"var_{len(rename_map)}"
 
         elif node.type == "type_identifier":
             if parent and parent.type == "class_specifier":
                 rename_map[node_text] = f"class_{len(rename_map)}"
+            elif parent and parent.type == "enum_specifier":
+                rename_map[node_text] = f"enumtype_{len(rename_map)}"
             else:
                 rename_map[node_text] = f"struct_{len(rename_map)}"
 
@@ -137,6 +137,10 @@ code = b"""
 
 class Hehe {
 
+};
+
+enum Stuffs {
+ E, B, C
 };
 
 // hello world ewfdwe
