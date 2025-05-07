@@ -57,5 +57,6 @@ python -c "from tree_sitter import Language; Language.build_library('my-language
 ```
 Also I realised later in the project that you can just import [tree-sitter-languages](https://pypi.org/project/tree-sitter-languages/) after installing
 ```bash
-pip install tree-sitter-languages```
+pip install tree-sitter-languages
+```
 which contains every single language we need.
