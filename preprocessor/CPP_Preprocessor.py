@@ -111,6 +111,82 @@ def replace_identifiers(code_bytes, rename_map):
         code_str = re.sub(r'\b' + re.escape(old_name) + r'\b', new_name, code_str)
     return code_str.encode('utf-8')
 
+# 5) Constant folding - 2 + 4 -> 6, have own evaluator.
+
+def evaluate_expression(node, code_bytes):
+    if node.type == 'parenthesized_expression':
+        return evaluate_expression(node.children[1], code_bytes)
+
+    if node.type == 'number_literal':
+        try:
+            return int(code_bytes[node.start_byte:node.end_byte].decode('utf-8'))
+        except ValueError:
+            return None
+
+    if node.type == 'binary_expression':
+        left = evaluate_expression(node.child_by_field_name('left'), code_bytes)
+        right = evaluate_expression(node.child_by_field_name('right'), code_bytes)
+        operator_node = node.child_by_field_name('operator')
+        op = code_bytes[operator_node.start_byte:operator_node.end_byte].decode('utf-8')
+
+        try:
+            if left is not None and right is not None:
+                if op == '+':
+                    return left + right
+                elif op == '-':
+                    return left - right
+                elif op == '*':
+                    return left * right
+                elif op == '/':
+                    return left // right if right != 0 else None
+                elif op == '%':
+                    return left % right if right != 0 else None
+                elif op == '<<':
+                    return left << right
+                elif op == '>>':
+                    return left >> right
+                elif op == '|':
+                    return left | right
+                elif op == '&':
+                    return left & right
+                elif op == '^':
+                    return left ^ right
+        except Exception:
+            return None
+    return None
+
+def collect_constant_folds(node, code_bytes, replacements):
+    value = evaluate_expression(node, code_bytes)
+    if value is not None:
+        replacements.append((node.start_byte, node.end_byte, str(value)))
+        return
+
+    for child in node.children:
+        collect_constant_folds(child, code_bytes, replacements)
+
+def apply_replacements(code_bytes, replacements):
+    replacements = sorted(replacements, key=lambda x: x[0])
+    new_code = bytearray()
+    last_index = 0
+
+    for start, end, result in replacements:
+        new_code.extend(code_bytes[last_index:start])
+        new_code.extend(result.encode('utf-8'))
+        last_index = end
+
+    new_code.extend(code_bytes[last_index:])
+    return bytes(new_code)
+
+def fold_constants(code: bytes):
+    tree = parser.parse(code)
+    root = tree.root_node
+
+    replacements = []
+    collect_constant_folds(root, code, replacements)
+
+    folded_code = apply_replacements(code, replacements)
+    return folded_code
+
 # 6) Actual preprocessing functions
 
 def pretty_print_node(node, code_bytes, indent=0):
@@ -124,16 +200,16 @@ def preprocess_cpp(code):
     importless_code = remove_includes(code)
     expanded_code = expand_and_remove_macros(importless_code)
     cleaned_code = remove_comments(expanded_code)
-    # folded_code = fold_constants(cleaned_code)
-    tree = parser.parse(cleaned_code)
+    folded_code = fold_constants(cleaned_code)
+    tree = parser.parse(folded_code)
 
     declared_ids = set()
-    collect_declared_identifiers(tree.root_node, cleaned_code, declared_ids)
+    collect_declared_identifiers(tree.root_node, folded_code, declared_ids)
     # print(f"declared ids: {declared_ids}")
     rename_map = {}
-    rename_identifiers(tree.root_node, cleaned_code, declared_ids, rename_map)
+    rename_identifiers(tree.root_node, folded_code, declared_ids, rename_map)
     # print(f"rename map: {rename_map}")
-    processed_code = replace_identifiers(cleaned_code, rename_map)
+    processed_code = replace_identifiers(folded_code, rename_map)
 
     # pretty_print_node(tree.root_node, processed_code)
 
