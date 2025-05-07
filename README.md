@@ -36,3 +36,26 @@ This project uses large language models to detect security vulnerabilities with 
    ```
 
 Note: It's recommended to run all code on a Linux platform device, as you may run into compatability issues. Development was done on a windows machine using [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install).
+
+# Running the CodeBERT and VulBERTa Analysis:
+Running the provided Jupyter Notebooks will conduct the analysis in its entirety. Note that finetuning was done on an RTX 4080 Laptop GPU (12 GB VRAM) and took multiple hours to complete. The experiments with frozen weights however take far less VRAM - 2GB should suffice.
+
+# Running the Deepseek Analysis:
+Due to the size of the Deepseek model, an NVIDIA A40 was used (48 GB VRAM) for finetuning. It's unlikely a card with less VRAM will be able to tune the model without crashing, as the model has 1.5 billion parameters and as a result requires lots of VRAM to simply store it. WIthin the deepseek_analysis folder, there is a script to install the [deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B) model locally, and a script that can be dispatched to the GPU cluster via SLURM. Detailed run instructions are within the deepseek folder.
+
+
+# Preprocessing:
+You must install clang 
+```bash
+sudo apt install clang
+```
+
+You also need to install the various tree-sitter versions for each language, e.g: 
+```bash
+git clone https://github.com/tree-sitter/tree-sitter-c
+python -c "from tree_sitter import Language; Language.build_library('my-languages.so', ['tree-sitter-c'])"
+```
+Also I realised later in the project that you can just import [tree-sitter-languages](https://pypi.org/project/tree-sitter-languages/) after installing
+```bash
+pip install tree-sitter-languages```
+which contains every single language we need.
