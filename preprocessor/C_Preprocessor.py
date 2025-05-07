@@ -10,7 +10,13 @@ C_LANGUAGE = Language('/mnt/c/Users/robpi/Desktop/FYP/FinalYearProject/parsers/c
 parser = Parser()
 parser.set_language(C_LANGUAGE)
 
-# 2) Macro Expansion
+# 2) Macro Expansion and Library removal
+
+def remove_includes(code_bytes):
+    code_str = code_bytes.decode('utf-8', errors='replace')
+    cleaned_code = re.sub(r'^\s*#\s*include\s+[<"].*[>"].*$', '', code_str, flags=re.MULTILINE)
+    return cleaned_code.encode('utf-8')
+
 def expand_and_remove_macros(code_bytes):
     with tempfile.NamedTemporaryFile(delete=False, suffix=".c") as tmp_file:
         tmp_file.write(code_bytes)
@@ -37,33 +43,43 @@ def remove_comments(code_bytes):
     return code_str.encode('utf-8')
 
 # 4) Renaming - Traverse the AST and use a symbol table for scope management
-def rename_identifiers(node, code_bytes, rename_map):
+def collect_declared_identifiers(node, code_bytes, declared_ids):
     node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
     parent = node.parent
 
     if node.type == "identifier":
-        is_function_name = (
-            parent is not None and
-            parent.type == "function_declarator" and
-            parent.child_by_field_name("declarator") == node
-        )
-        if is_function_name:
-            if node_text not in rename_map:
-                rename_map[node_text] = f"fn_{len(rename_map)}"
-        else:
-            if node_text not in rename_map:
-                rename_map[node_text] = f"var_{len(rename_map)}"
+        if parent and parent.type in ("init_declarator", "parameter_declaration"):
+            declared_ids.add(node_text)
+
+        elif parent and parent.type == "function_declarator" and parent.child_by_field_name("declarator") == node:
+            declared_ids.add(node_text)
 
     elif node.type == "type_identifier":
-        is_struct_name = (
-            parent is not None and parent.type == "struct_specifier"
-        )
-        if is_struct_name:
-            if node_text not in rename_map:
-                rename_map[node_text] = f"struct_{len(rename_map)}"
+        if parent and parent.type == "struct_specifier":
+            declared_ids.add(node_text)
 
     for child in node.children:
-        rename_identifiers(child, code_bytes, rename_map)
+        collect_declared_identifiers(child, code_bytes, declared_ids)
+
+def rename_identifiers(node, code_bytes, declared_ids, rename_map):
+    node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
+
+    if node_text in declared_ids and node_text not in rename_map:
+        if node.type == "identifier":
+            parent = node.parent
+            is_function_name = (
+                parent and parent.type == "function_declarator" and
+                parent.child_by_field_name("declarator") == node
+            )
+            rename_map[node_text] = (
+                f"fn_{len(rename_map)}" if is_function_name else f"var_{len(rename_map)}"
+            )
+        elif node.type == "type_identifier":
+            rename_map[node_text] = f"struct_{len(rename_map)}"
+
+    for child in node.children:
+        rename_identifiers(child, code_bytes, declared_ids, rename_map)
+
 
 def replace_identifiers(code_bytes, rename_map):
     code_str = code_bytes.decode('utf-8', errors='replace')
@@ -157,19 +173,21 @@ def pretty_print_node(node, code_bytes, indent=0):
         pretty_print_node(child, code_bytes, indent + 1)
 
 def preprocess_c(code):
-    expanded_code = expand_and_remove_macros(code)
+    importless_code = remove_includes(code)
+    expanded_code = expand_and_remove_macros(importless_code)
     cleaned_code = remove_comments(expanded_code)
     folded_code = fold_constants(cleaned_code)
     tree = parser.parse(folded_code)
 
+    declared_ids = set()
+    collect_declared_identifiers(tree.root_node, folded_code, declared_ids)
     rename_map = {}
-    tree = parser.parse(folded_code)
-    rename_identifiers(tree.root_node, folded_code, rename_map)
-    renamed_code = replace_identifiers(folded_code, rename_map)
+    rename_identifiers(tree.root_node, folded_code, declared_ids, rename_map)
+    processed_code = replace_identifiers(folded_code, rename_map)
 
-    pretty_print_node(tree.root_node, folded_code)
+    pretty_print_node(tree.root_node, processed_code)
 
-    return renamed_code.decode('utf-8')
+    return processed_code.decode('utf-8')
 
 # NOTE THAT WE DON'T RESOLVE VARIABLE ASSIGNMENTS TO OTHER RESOLVED VARIABLES IN OUR C CODE IN THE CONSTANT
 # FOLDING PHASE!! THIS IS BECAUSE VARIABLES MAY BE FREED OR NOT IN HEAP MEMORY - THIS COULD LEAD TO CWE'S THAT
@@ -180,11 +198,12 @@ code = b"""
 // bury it i wont let
 /* you bury it i wont let you smother it i wont let you murder it our time is running out */
 
+# include <stdlib.h>
 struct Hello {};
 
 int main() {
     int x = (VALUE + VALUE) * VALUE;
-
+    printf("%d", x);
     if (x > 0) {
        int x = 19;
        y = x + x;
