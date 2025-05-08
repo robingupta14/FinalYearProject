@@ -45,7 +45,7 @@ def collect_declared_identifiers(node, code_bytes, declared_ids):
         if parent and parent.type in (
             "init_declarator",
             "parameter_declaration",
-            "enumerator",
+            "enum_declaration",
             "variable_declarator",
             "field_declaration",
             "method_declaration",
@@ -84,14 +84,15 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
         if node.type == "namespace_identifier":
             if parent and parent.type == "namespace_definition":
                 rename_map[node_text] = f"ns_{len(rename_map)}"
-
+         
         elif node.type == "identifier":
             is_function = (
                 parent and parent.type in ("function_declarator", "function_definition") and
                 parent.child_by_field_name("declarator") == node
             )
+
             is_class = parent and parent.type == "class_specifier"
-            is_enum = parent and parent.type == "enumerator"
+            is_enum = parent and parent.type == "enum_declaration"
             is_param = parent and parent.type == "parameter_declaration"
             is_field = parent and parent.type == "field_declaration"
 
@@ -109,7 +110,7 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
                 rename_map[node_text] = f"var_{len(rename_map)}"
 
         elif node.type == "type_identifier":
-            if parent and parent.type == "enum_specifier":
+            if parent and parent.type == "enum_member_declaration":
                 rename_map[node_text] = f"enumtype_{len(rename_map)}"
             elif parent and parent.type == "class_specifier":
                 rename_map[node_text] = f"class_{len(rename_map)}"
@@ -157,17 +158,74 @@ def preprocess_csharp(code):
 
 code = b"""
 using System;
+using System.Collections.Generic;
 
-// ok ok
-/* OK ? */
-
-/// this function skibidi
-public class HelloWorld
+namespace MyApp.Core
 {
-    public static void Main(string[] args)
+    public interface ILogger
     {
-        Console.WriteLine ("popbop");
-        return 42;
+    }
+
+    public enum LogLevel
+    {
+        Info,
+        Warning,
+        Error
+    }
+
+    public struct Point
+    {
+        public int X;
+        public int Y;
+    }
+
+    public class Logger : ILogger
+    {
+        private string logPrefix = "LOG:";
+
+        public void Log(string message)
+        {
+            Console.WriteLine($"{logPrefix} {message}");
+        }
+    }
+
+    public class Processor
+    {
+        private ILogger logger;
+
+        public Processor(ILogger logger)
+        {
+            this.logger = logger;
+        }
+
+        public int Compute(Point point, LogLevel level)
+        {
+            int result = point.X + point.Y;
+
+            switch (level)
+            {
+                case LogLevel.Info:
+                    logger.Log("Info level computation");
+                    break;
+                case LogLevel.Warning:
+                    logger.Log("Warning level computation");
+                    break;
+                case LogLevel.Error:
+                    logger.Log("Error level computation");
+                    break;
+            }
+
+            return result;
+        }
+
+        public static void Main(string[] args)
+        {
+            ILogger logger = new Logger();
+            Processor processor = new Processor(logger);
+            Point p = new Point { X = 10, Y = 20 };
+            int output = processor.Compute(p, LogLevel.Warning);
+            Console.WriteLine("Result: " + output);
+        }
     }
 }
 """
