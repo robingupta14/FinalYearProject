@@ -44,11 +44,13 @@ def collect_declared_identifiers(node, code_bytes, declared_ids):
     if node.type == "identifier":
         if parent and parent.type in (
             "enum_declaration",
+            "enum_member_declaration",
             "variable_declarator",
             "field_declaration",
             "method_declaration",
             "class_declaration",
             "interface_declaration",
+            "struct_declaration"
         ):
             declared_ids.add(node_text)
         elif parent and parent.type in ("function_definition") and parent.child_by_field_name("declarator") == node:
@@ -89,19 +91,25 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
                 parent.child_by_field_name("declarator") == node
             )
 
+            is_struct = parent and parent.type == "struct_declaration"
             is_class = parent and parent.type == "class_specifier"
-            is_enum = parent and parent.type == "enum_declaration"
+            is_enum_type = parent and parent.type == "enum_declaration"
+            is_enum = parent and parent.type == "enum_member_declaration"
             is_param = parent and parent.type == "parameter"
             is_field = parent and parent.type == "field_declaration"
             is_interface = parent and parent.type == "interface_declaration"
             is_method = parent and parent.type == "method_declaration"
 
-            if is_function:
+            if is_struct:
+                rename_map[node_text] = f"struct_{len(rename_map)}"
+            elif is_function:
                 rename_map[node_text] = f"fn_{len(rename_map)}"
             elif is_class:
                 rename_map[node_text] = f"class_{len(rename_map)}"
-            elif is_enum:
+            elif is_enum_type:
                 rename_map[node_text] = f"enumtype_{len(rename_map)}"
+            elif is_enum:
+                rename_map[node_text] = f"enum_{len(rename_map)}"
             elif is_param:
                 rename_map[node_text] = f"param_{len(rename_map)}"
             elif is_field:
@@ -113,6 +121,9 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
             else:
                 rename_map[node_text] = f"var_{len(rename_map)}"
         
+        elif node.type == "field_declaration":
+            rename_map[node_text] = f"field_{len(rename_map)}"
+
         elif node.type == "qualified_name":
             if parent and parent.type in ("namespace_declaration"):
                 rename_map[node_text] = f"ns_{len(rename_map)}"
@@ -158,8 +169,7 @@ def preprocess_csharp(code):
     print(f"rename map: {rename_map}")
     processed_code = replace_identifiers(cleaned_code, rename_map)
 
-    #pretty_print_node(tree.root_node, processed_code)
-
+    pretty_print_node(tree.root_node, processed_code)
     return processed_code.decode('utf-8')
 
 code = b"""
@@ -174,20 +184,20 @@ public interface ILogger {
    void Log(String message)
 }
 
+public enum LogLevel
+{
+    Info,
+    Warning,
+    Error
+}
+
+public struct Point
+{
+    public int X;
+    public int Y;
+}
 """
 
-#     public enum LogLevel
-#     {
-#         Info,
-#         Warning,
-#         Error
-#     }
-
-#     public struct Point
-#     {
-#         public int X;
-#         public int Y;
-#     }
 
 #     public class Logger : ILogger
 #     {
