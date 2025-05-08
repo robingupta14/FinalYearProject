@@ -146,12 +146,11 @@ def replace_identifiers(code_bytes, rename_map):
     return code_str.encode('utf-8')
 
 # 6) Constant folding - 2 + 4 -> 6, have own evaluator.
-
 def evaluate_expression(node, code_bytes):
     if node.type == 'parenthesized_expression':
         return evaluate_expression(node.children[1], code_bytes)
 
-    if node.type == 'number_literal':
+    if node.type == 'integer_literal' or node.type == 'real_literal' or node.type == 'boolean_literal':
         try:
             return int(code_bytes[node.start_byte:node.end_byte].decode('utf-8'))
         except ValueError:
@@ -239,10 +238,10 @@ def preprocess_csharp(code):
 
     declared_ids = set()
     collect_declared_identifiers(tree.root_node, folded_code, declared_ids)
-    print(f"declared ids: {declared_ids}")
+    #print(f"declared ids: {declared_ids}")
     rename_map = {}
     rename_identifiers(tree.root_node, folded_code, declared_ids, rename_map)
-    print(f"rename map: {rename_map}")
+    #print(f"rename map: {rename_map}")
     processed_code = replace_identifiers(folded_code, rename_map)
 
     pretty_print_node(tree.root_node, processed_code)
@@ -252,72 +251,68 @@ code = b"""
 using System;
 using System.Collections.Generic;
 
-namespace MyApp.Core
-{
-   
-}
+namespace MyApp.Core {
 
-
-public enum LogLevel
-{
-    Info,
-    Warning,
-    Error
-}
-
-public struct Point
-{
-    public int X;
-    public int Y;
-}
-
-public interface ILogger {
-   void Log(String message)
-}
-
-public class Processor
-{
-    private ILogger logger;
-
-    public Processor(ILogger logger)
+    public enum LogLevel
     {
-        this.logger = logger;
+        Info,
+        Warning,
+        Error
     }
 
-    public void booger(String e) {
+    public struct Point
+    {
+        public int X;
+        public int Y;
     }
 
-    public int Compute(Point point, LogLevel level)
-    {
-        int result = point.X + point.Y;
+    public interface ILogger {
+    void Log(String message)
+    }
 
-        switch (level)
+    public class Processor
+    {
+        private ILogger logger;
+
+        public Processor(ILogger logger)
         {
-            case LogLevel.Info:
-                logger.Log("Info level computation");
-                break;
-            case LogLevel.Warning:
-                logger.Log("Warning level computation");
-                break;
-            case LogLevel.Error:
-                logger.Log("Error level computation");
-                break;
+            this.logger = logger;
         }
 
-        return result;
-    }
+        public void booger(String e) {
+        }
 
-    public static void Main(string[] args)
-    {
-        ILogger logger = new Logger();
-        Processor processor = new Processor(logger);
-        Point p = new Point { X = 10, Y = 20 };
-        int output = processor.Compute(p, LogLevel.Warning);
-        int x = 42 * 42 + 42;
-        Console.WriteLine("Result: " + output);
+        public int Compute(Point point, LogLevel level)
+        {
+            int result = point.X + point.Y;
+
+            switch (level)
+            {
+                case LogLevel.Info:
+                    logger.Log("Info level computation");
+                    break;
+                case LogLevel.Warning:
+                    logger.Log("Warning level computation");
+                    break;
+                case LogLevel.Error:
+                    logger.Log("Error level computation");
+                    break;
+            }
+
+            return result;
+        }
+
+        public static void Main(string[] args)
+        {
+            int x = 42 * 42 + 42;   
+            ILogger logger = new Logger();
+            Processor processor = new Processor(logger);
+            Point p = new Point { X = 10, Y = 20 };
+            int output = processor.Compute(p, LogLevel.Warning);
+            Console.WriteLine("Result: " + output);
+        }
     }
 }
-
 """
 
 print(preprocess_csharp(code))
