@@ -70,7 +70,6 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
     parent = node.parent
 
     if node_text in declared_ids and node_text not in rename_map:
-        print(node.type)
         if node.type == "declaration_list" or node.type == "namespace_identifier":
             if (parent.type == "namespace_definition"):
                 rename_map[node_text] = f"ns_{len(rename_map)}"
