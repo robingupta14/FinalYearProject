@@ -43,11 +43,11 @@ def remove_comments(code_bytes):
     code_str = re.sub(r'/\*.*?\*/', '', code_str, flags=re.DOTALL)
     return code_str.encode('utf-8')
 
-# 4) Renaming - Traverse the AST
+
 def label_code(code_bytes, tree):
-    declared_ids = defaultdict(list)  # {name -> [("type", scope_level)]}
+    declared_ids = defaultdict(list)
     rename_map = {}
-    scope_stack = [] 
+    scope_stack = []
 
     def enter_scope():
         scope_stack.append(set())
@@ -70,10 +70,8 @@ def label_code(code_bytes, tree):
             if parent:
                 if parent.type == "function_declarator" and parent.child_by_field_name("declarator") == node:
                     record_declaration(node_text, "func")
-
                 elif parent.type == "enumerator":
                     record_declaration(node_text, "enum")
-
                 elif parent.type in ("init_declarator", "parameter_declaration"):
                     record_declaration(node_text, "var")
 
@@ -89,17 +87,16 @@ def label_code(code_bytes, tree):
         if node.type == 'compound_statement':
             exit_scope()
 
-    # Step 1: collect all declarations and label them by kind
     enter_scope()
     collect_and_label(tree.root_node)
     exit_scope()
 
-    # Step 2: Build unique rename map
     for name, kind_levels in declared_ids.items():
-        for idx, (kind, scope_level) in enumerate(kind_levels):
+        for idx, (kind, _) in enumerate(kind_levels):
             label = f"{kind}_{name}"
-            if label not in rename_map:
-                rename_map[name] = label 
+            key = (kind, name)
+            if key not in rename_map:
+                rename_map[key] = label
 
     return rename_map
 
@@ -147,11 +144,48 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
     for child in node.children:
         rename_identifiers(child, code_bytes, declared_ids, rename_map)
 
-def replace_identifiers(code_bytes, rename_map):
-    code_str = code_bytes.decode('utf-8', errors='replace')
-    for old_name, new_name in rename_map.items():
-        code_str = re.sub(r'\b' + re.escape(old_name) + r'\b', new_name, code_str)
-    return code_str.encode('utf-8')
+def replace_identifiers(code_bytes, rename_map, tree):
+    result = []
+    last_byte = 0
+
+    def get_kind(node):
+        parent = node.parent
+        if node.type == "identifier":
+            if parent:
+                if parent.type == "function_declarator" and parent.child_by_field_name("declarator") == node:
+                    return "func"
+                elif parent.type == "enumerator":
+                    return "enum"
+                elif parent.type in ("init_declarator", "parameter_declaration"):
+                    return "var"
+        elif node.type == "type_identifier":
+            if parent and parent.type == "struct_specifier":
+                return "struct"
+            elif parent and parent.type == "enum_specifier":
+                return "enumtype"
+        return None
+
+    def visit(node):
+        nonlocal last_byte
+
+        for child in node.children:
+            visit(child)
+
+        if node.type in ("identifier", "type_identifier"):
+            kind = get_kind(node)
+            if kind:
+                original_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
+                replacement = rename_map.get((kind, original_text))
+                if replacement:
+                    # Append unchanged bytes before this node
+                    result.append(code_bytes[last_byte:node.start_byte])
+                    result.append(replacement.encode('utf-8'))
+                    last_byte = node.end_byte
+
+    visit(tree.root_node)
+    result.append(code_bytes[last_byte:])
+    return b''.join(result)
+
 
 # 5) Constant folding - 2 + 4 -> 6, have own evaluator.
 
@@ -242,35 +276,39 @@ def preprocess_c(code):
     expanded_code = expand_and_remove_macros(importless_code)
     cleaned_code = remove_comments(expanded_code)
     folded_code = fold_constants(cleaned_code)
+
     tree = parser.parse(folded_code)
+    labeled_code = replace_identifiers(folded_code, label_code(folded_code, tree), tree)
+
+    labeled_tree = parser.parse(labeled_code)
 
     declared_ids = set()
-    rename_map = label_code(folded_code, tree)
-    collect_declared_identifiers(tree.root_node, folded_code, declared_ids)
-    rename_identifiers(tree.root_node, folded_code, declared_ids, rename_map)
-    processed_code = replace_identifiers(folded_code, rename_map)
+    collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
+    rename_map = {}
+    rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
 
-    pretty_print_node(tree.root_node, folded_code)
-    print(rename_map)
-    return processed_code.decode('utf-8')
+    obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
+
+    return obfuscated_code.decode('utf-8')
+
 
 # NOTE THAT WE DON'T RESOLVE VARIABLE ASSIGNMENTS TO OTHER RESOLVED VARIABLES IN OUR C CODE IN THE CONSTANT
 # FOLDING PHASE!! THIS IS BECAUSE VARIABLES MAY BE FREED OR NOT IN HEAP MEMORY - THIS COULD LEAD TO CWE'S THAT
 # WE OBSCURE BY EXPANDING. SINCE WE ARE NOT TRACKING FREEING AND ALLOCATING LOGIC AND ETC!
 
-code = b"""
 # define VALUE 42
-// bury it i wont let
-/* you bury it i wont let you smother it i wont let you murder it our time is running out */
-
+# // bury it i wont let
+# /* you bury it i wont let you smother it i wont let you murder it our time is running out */
 # include <stdlib.h>
+
+code = b"""
 struct Hello {};
 
 enum Stuffs {
  E, B, C
 };
 
-int main() {
+int x() {
     int x = (VALUE + VALUE) * VALUE;
     printf("%d", x);
     if (x > 0) {
@@ -282,4 +320,4 @@ int main() {
 }
 """
 
-preprocess_c(code)
+print(preprocess_c(code))
