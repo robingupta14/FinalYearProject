@@ -48,6 +48,7 @@ def collect_declared_identifiers(node, code_bytes, declared_ids):
             "field_declaration",
             "method_declaration",
             "class_declaration",
+            "interface_declaration"
         ):
             declared_ids.add(node_text)
         elif parent and parent.type in ("function_definition") and parent.child_by_field_name("declarator") == node:
@@ -90,6 +91,8 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
             is_enum = parent and parent.type == "enum_declaration"
             is_param = parent and parent.type == "parameter_declaration"
             is_field = parent and parent.type == "field_declaration"
+            is_interface = parent and parent.type == "interface_declaration"
+
             if is_function:
                 rename_map[node_text] = f"fn_{len(rename_map)}"
             elif is_class:
@@ -100,6 +103,8 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
                 rename_map[node_text] = f"param_{len(rename_map)}"
             elif is_field:
                 rename_map[node_text] = f"field_{len(rename_map)}"
+            elif is_interface:
+                rename_map[node_text] = f"interface_{len(rename_map)}"
             else:
                 rename_map[node_text] = f"var_{len(rename_map)}"
         
@@ -148,7 +153,7 @@ def preprocess_csharp(code):
     print(f"rename map: {rename_map}")
     processed_code = replace_identifiers(cleaned_code, rename_map)
 
-    # pretty_print_node(tree.root_node, processed_code)
+    pretty_print_node(tree.root_node, processed_code)
 
     return processed_code.decode('utf-8')
 
@@ -160,11 +165,11 @@ namespace MyApp.Core
 {
    
 }
-"""
+public interface ILogger {
+   void Log(String message)
+}
 
-#  public interface ILogger
-#     {
-#     }
+"""
 
 #     public enum LogLevel
 #     {
