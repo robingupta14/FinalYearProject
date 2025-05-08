@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 import re
 import os
+from collections import defaultdict
 
 # 1) Extraneous whitespace, formatting -> Removed by this step as it's not stored in Tree-sitter ASTs.
 C_LANGUAGE = Language('/mnt/c/Users/robpi/Desktop/FYP/FinalYearProject/parsers/c-parser.so', 'c')
@@ -43,6 +44,65 @@ def remove_comments(code_bytes):
     return code_str.encode('utf-8')
 
 # 4) Renaming - Traverse the AST
+def label_code(code_bytes, tree):
+    declared_ids = defaultdict(list)  # {name -> [("type", scope_level)]}
+    rename_map = {}
+    scope_stack = [] 
+
+    def enter_scope():
+        scope_stack.append(set())
+    def exit_scope():
+        scope_stack.pop()
+    def current_scope_level():
+        return len(scope_stack)
+    def record_declaration(name, kind):
+        declared_ids[name].append((kind, current_scope_level()))
+        scope_stack[-1].add(name)
+
+    def collect_and_label(node):
+        node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
+        parent = node.parent
+
+        if node.type == 'compound_statement':
+            enter_scope()
+
+        if node.type == "identifier":
+            if parent:
+                if parent.type == "function_declarator" and parent.child_by_field_name("declarator") == node:
+                    record_declaration(node_text, "func")
+
+                elif parent.type == "enumerator":
+                    record_declaration(node_text, "enum")
+
+                elif parent.type in ("init_declarator", "parameter_declaration"):
+                    record_declaration(node_text, "var")
+
+        elif node.type == "type_identifier":
+            if parent and parent.type == "struct_specifier":
+                record_declaration(node_text, "struct")
+            elif parent and parent.type == "enum_specifier":
+                record_declaration(node_text, "enumtype")
+
+        for child in node.children:
+            collect_and_label(child)
+
+        if node.type == 'compound_statement':
+            exit_scope()
+
+    # Step 1: collect all declarations and label them by kind
+    enter_scope()
+    collect_and_label(tree.root_node)
+    exit_scope()
+
+    # Step 2: Build unique rename map
+    for name, kind_levels in declared_ids.items():
+        for idx, (kind, scope_level) in enumerate(kind_levels):
+            label = f"{kind}_{name}"
+            if label not in rename_map:
+                rename_map[name] = label 
+
+    return rename_map
+
 def collect_declared_identifiers(node, code_bytes, declared_ids):
     node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
     parent = node.parent
@@ -170,7 +230,6 @@ def fold_constants(code: bytes):
     return folded_code
 
 # 6) Actual preprocessing functions
-
 def pretty_print_node(node, code_bytes, indent=0):
     indent_str = '  ' * indent
     node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
@@ -186,13 +245,13 @@ def preprocess_c(code):
     tree = parser.parse(folded_code)
 
     declared_ids = set()
+    rename_map = label_code(folded_code, tree)
     collect_declared_identifiers(tree.root_node, folded_code, declared_ids)
-    rename_map = {}
     rename_identifiers(tree.root_node, folded_code, declared_ids, rename_map)
     processed_code = replace_identifiers(folded_code, rename_map)
 
-    pretty_print_node(tree.root_node, processed_code)
-
+    pretty_print_node(tree.root_node, folded_code)
+    print(rename_map)
     return processed_code.decode('utf-8')
 
 # NOTE THAT WE DON'T RESOLVE VARIABLE ASSIGNMENTS TO OTHER RESOLVED VARIABLES IN OUR C CODE IN THE CONSTANT
@@ -223,4 +282,4 @@ int main() {
 }
 """
 
-print(preprocess_c(code))
+preprocess_c(code)
