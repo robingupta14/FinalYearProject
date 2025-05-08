@@ -42,7 +42,7 @@ def remove_comments(code_bytes):
     code_str = re.sub(r'/\*.*?\*/', '', code_str, flags=re.DOTALL)
     return code_str.encode('utf-8')
 
-# 4) Renaming - Traverse the AST and use a symbol table for scope management
+# 4) Renaming - Traverse the AST
 def collect_declared_identifiers(node, code_bytes, declared_ids):
     node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
     parent = node.parent
@@ -63,7 +63,6 @@ def collect_declared_identifiers(node, code_bytes, declared_ids):
 
     for child in node.children:
         collect_declared_identifiers(child, code_bytes, declared_ids)
-
 
 def rename_identifiers(node, code_bytes, declared_ids, rename_map):
     node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
@@ -217,7 +216,7 @@ int main() {
     printf("%d", x);
     if (x > 0) {
        int x = 19;
-       y = x + x;
+       int y = x + x;
     }
 
     return x
