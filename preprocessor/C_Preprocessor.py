@@ -285,7 +285,7 @@ def preprocess_c(code):
     declared_ids = set()
     collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
     rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
-    print(rename_map)
+    # print(rename_map)
     obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
 
     return obfuscated_code.decode('utf-8')
