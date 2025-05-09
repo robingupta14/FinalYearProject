@@ -278,15 +278,14 @@ def preprocess_c(code):
     folded_code = fold_constants(cleaned_code)
 
     tree = parser.parse(folded_code)
-    labeled_code = replace_identifiers(folded_code, label_code(folded_code, tree), tree)
-
+    rename_map = label_code(folded_code, tree)
+    labeled_code = replace_identifiers(folded_code, rename_map, tree)
     labeled_tree = parser.parse(labeled_code)
 
     declared_ids = set()
     collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
-    rename_map = {}
     rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
-
+    print(rename_map)
     obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
 
     return obfuscated_code.decode('utf-8')
