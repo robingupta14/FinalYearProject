@@ -4,6 +4,7 @@ import tempfile
 import subprocess
 import re
 import os
+from collections import defaultdict
 
 # 1) Extraneous whitespace, formatting -> Removed by this step as it's not stored in Tree-sitter ASTs.
 cpp_lang = get_language('cpp')
@@ -99,11 +100,128 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
     for child in node.children:
         rename_identifiers(child, code_bytes, declared_ids, rename_map)
 
-def replace_identifiers(code_bytes, rename_map):
-    code_str = code_bytes.decode('utf-8', errors='replace')
-    for old_name, new_name in rename_map.items():
-        code_str = re.sub(r'\b' + re.escape(old_name) + r'\b', new_name, code_str)
-    return code_str.encode('utf-8')
+def label_code(code_bytes, tree):
+    declared_ids = defaultdict(list)
+    rename_map = {}
+    scope_stack = []
+
+    def enter_scope():
+        scope_stack.append(set())
+
+    def exit_scope():
+        scope_stack.pop()
+
+    def current_scope_level():
+        return len(scope_stack)
+
+    def record_declaration(name, kind):
+        declared_ids[name].append((kind, current_scope_level()))
+        scope_stack[-1].add(name)
+
+    def collect_and_label(node):
+        node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
+        parent = node.parent
+
+        if node.type in ('compound_statement', 'class_specifier', 'namespace_definition', 'template_declaration'):
+            enter_scope()
+
+        if node.type == "identifier":
+            if parent:
+                if parent.type == "function_declarator" and parent.child_by_field_name("declarator") == node:
+                    record_declaration(node_text, "func")
+                elif parent.type == "enumerator":
+                    record_declaration(node_text, "enum")
+                elif parent.type in ("init_declarator", "parameter_declaration"):
+                    record_declaration(node_text, "var")
+                elif parent.type in ("class_specifier", "struct_specifier"):
+                    record_declaration(node_text, "class")
+
+        elif node.type == "type_identifier":
+            if parent:
+                if parent.type == "struct_specifier":
+                    record_declaration(node_text, "struct")
+                elif parent.type == "enum_specifier":
+                    record_declaration(node_text, "enumtype")
+                elif parent.type == "class_specifier":
+                    record_declaration(node_text, "class")
+
+        elif node.type == "namespace_identifier":
+            if parent and parent.type == "namespace_definition":
+                record_declaration(node_text, "ns")
+
+        for child in node.children:
+            collect_and_label(child)
+
+        if node.type in ('compound_statement', 'class_specifier', 'namespace_definition', 'template_declaration'):
+            exit_scope()
+
+    enter_scope()
+    collect_and_label(tree.root_node)
+    exit_scope()
+
+    for name, kind_levels in declared_ids.items():
+        for kind, _ in kind_levels:
+            key = (kind, name)
+            if key not in rename_map:
+                rename_map[key] = f"{kind}_{len(rename_map)}"
+
+    return rename_map
+
+
+def replace_identifiers(code_bytes, rename_map, tree):
+    result = []
+    last_byte = 0
+
+    def get_kind_and_name(node):
+        parent = node.parent
+        if node.type == "identifier":
+            if parent:
+                if parent.type == "function_declarator" and parent.child_by_field_name("declarator") == node:
+                    return ("func", node.text.decode())
+                elif parent.type == "enumerator":
+                    return ("enum", node.text.decode())
+                elif parent.type in ("init_declarator", "parameter_declaration"):
+                    return ("var", node.text.decode())
+                elif parent.type in ("class_specifier", "struct_specifier"):
+                    return ("class", node.text.decode())
+                else:
+                    return infer_kind_fallback(node)
+        elif node.type == "type_identifier":
+            if parent:
+                if parent.type == "struct_specifier":
+                    return ("struct", node.text.decode())
+                elif parent.type == "enum_specifier":
+                    return ("enumtype", node.text.decode())
+                elif parent.type == "class_specifier":
+                    return ("class", node.text.decode())
+        elif node.type == "namespace_identifier":
+            if parent and parent.type == "namespace_definition":
+                return ("ns", node.text.decode())
+        return infer_kind_fallback(node)
+
+    def infer_kind_fallback(node):
+        name = node.text.decode()
+        for kind in ["var", "func", "class", "struct", "enum", "enumtype", "ns"]:
+            if (kind, name) in rename_map:
+                return (kind, name)
+        return None
+
+    def visit(node):
+        nonlocal last_byte
+        if node.type in ("identifier", "type_identifier", "namespace_identifier"):
+            key = get_kind_and_name(node)
+            if key and key in rename_map:
+                replacement = rename_map[key]
+                result.append(code_bytes[last_byte:node.start_byte])
+                result.append(replacement.encode('utf-8'))
+                last_byte = node.end_byte
+            return 
+        for child in node.children:
+            visit(child)
+
+    visit(tree.root_node)
+    result.append(code_bytes[last_byte:])
+    return b''.join(result)
 
 # 5) Constant folding - 2 + 4 -> 6, have own evaluator.
 
@@ -195,19 +313,19 @@ def preprocess_cpp(code):
     expanded_code = expand_and_remove_macros(importless_code)
     cleaned_code = remove_comments(expanded_code)
     folded_code = fold_constants(cleaned_code)
+
     tree = parser.parse(folded_code)
+    rename_map = label_code(folded_code, tree)
+    labeled_code = replace_identifiers(folded_code, rename_map, tree)
+    labeled_tree = parser.parse(labeled_code)
 
     declared_ids = set()
-    collect_declared_identifiers(tree.root_node, folded_code, declared_ids)
-    # print(f"declared ids: {declared_ids}")
-    rename_map = {}
-    rename_identifiers(tree.root_node, folded_code, declared_ids, rename_map)
-    # print(f"rename map: {rename_map}")
-    processed_code = replace_identifiers(folded_code, rename_map)
-
-    # pretty_print_node(tree.root_node, processed_code)
-
-    return processed_code.decode('utf-8')
+    collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
+    rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
+    # print(rename_map)
+    obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
+    #pretty_print_node(labeled_tree.root_node, obfuscated_code)
+    return obfuscated_code.decode('utf-8')
 
 
 code = b"""
@@ -223,14 +341,14 @@ enum Stuffs {
 };
 
 // hello world ewfdwe
-namespace trolladwqadwqdqwdwqdqmos {
+namespace a {
     void func(int x, int y) {
         std::cout << "tr" << std::endl;
     }
 }
 
-int main() {
-    trolladwqadwqdqwdwqdqmos::func();
+int x() {
+    a::func(1, 2);
     Hehe two;
     int x = VALUE * VALUE;
     std::cout << x << std::endl;
