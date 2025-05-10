@@ -43,7 +43,6 @@ def remove_comments(code_bytes):
     code_str = re.sub(r'/\*.*?\*/', '', code_str, flags=re.DOTALL)
     return code_str.encode('utf-8')
 
-
 def label_code(code_bytes, tree):
     declared_ids = defaultdict(list)
     rename_map = {}
@@ -177,7 +176,6 @@ def replace_identifiers(code_bytes, rename_map, tree):
                 original_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
                 replacement = rename_map.get((kind, original_text))
                 if replacement:
-                    # Append unchanged bytes before this node
                     result.append(code_bytes[last_byte:node.start_byte])
                     result.append(replacement.encode('utf-8'))
                     last_byte = node.end_byte
@@ -295,12 +293,11 @@ def preprocess_c(code):
 # FOLDING PHASE!! THIS IS BECAUSE VARIABLES MAY BE FREED OR NOT IN HEAP MEMORY - THIS COULD LEAD TO CWE'S THAT
 # WE OBSCURE BY EXPANDING. SINCE WE ARE NOT TRACKING FREEING AND ALLOCATING LOGIC AND ETC!
 
-# define VALUE 42
-# // bury it i wont let
-# /* you bury it i wont let you smother it i wont let you murder it our time is running out */
-# include <stdlib.h>
-
 code = b"""
+# define VALUE 42
+// bury it i wont let
+/* you bury it i wont let you smother it i wont let you murder it our time is running out */
+include <stdlib.h>
 struct Hello {};
 
 enum Stuffs {
