@@ -381,7 +381,7 @@ namespace MyApp.Core {
     }
 
     public interface ILogger {
-    void Log(String message)
+        void Log(String message)
     }
 
     public class Processor
@@ -416,7 +416,7 @@ namespace MyApp.Core {
             return result;
         }
 
-        public static void Main(string[] args)
+        public static void x(string[] args)
         {
             int x = 42 * 42 + 42;   
             ILogger logger = new Logger();
