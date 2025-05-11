@@ -95,6 +95,7 @@ def label_code(code_bytes, tree):
             label = f"{kind}_{name}"
             key = (kind, name)
             if key not in rename_map:
+                # print(f"OK: {key}, {label}")
                 rename_map[key] = label
 
     return rename_map
@@ -127,18 +128,18 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
         if node.type == "identifier":
             parent = node.parent
             if parent and parent.type == "function_declarator" and parent.child_by_field_name("declarator") == node:
-                rename_map[node_text] = f"fn_{len(rename_map)}"
+                rename_map[("func", node_text)] = f"fn_{len(rename_map)}"
             elif parent and parent.type == "enumerator":
-                rename_map[node_text] = f"enum_{len(rename_map)}"
+                rename_map[("enum", node_text)] = f"enum_{len(rename_map)}"
             else:
-                rename_map[node_text] = f"var_{len(rename_map)}"
+                rename_map[("var", node_text)] = f"var_{len(rename_map)}"
 
         elif node.type == "type_identifier":
             parent = node.parent
             if parent and parent.type == "struct_specifier":
-                rename_map[node_text] = f"struct_{len(rename_map)}"
+                rename_map[("struct", node_text)] = f"struct_{len(rename_map)}"
             elif parent and parent.type == "enum_specifier":
-                rename_map[node_text] = f"enumtype_{len(rename_map)}"
+                rename_map[("enumtype", node_text)] = f"enumtype_{len(rename_map)}"
 
     for child in node.children:
         rename_identifiers(child, code_bytes, declared_ids, rename_map)
@@ -155,7 +156,7 @@ def replace_identifiers(code_bytes, rename_map, tree):
                     return "func"
                 elif parent.type == "enumerator":
                     return "enum"
-                elif parent.type in ("init_declarator", "parameter_declaration"):
+                else:
                     return "var"
         elif node.type == "type_identifier":
             if parent and parent.type == "struct_specifier":
@@ -277,9 +278,13 @@ def preprocess_c(code):
 
     tree = parser.parse(folded_code)
     rename_map = label_code(folded_code, tree)
+
+    # print(rename_map)
+    #pretty_print_node(tree.root_node, folded_code)
     labeled_code = replace_identifiers(folded_code, rename_map, tree)
     labeled_tree = parser.parse(labeled_code)
 
+    rename_map = {}
     declared_ids = set()
     collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
     rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
@@ -297,7 +302,7 @@ code = b"""
 # define VALUE 42
 // bury it i wont let
 /* you bury it i wont let you smother it i wont let you murder it our time is running out */
-include <stdlib.h>
+#include <stdlib.h>
 struct Hello {};
 
 enum Stuffs {
@@ -316,4 +321,4 @@ int x() {
 }
 """
 
-print(preprocess_c(code))
+print(preprocess_c(code).strip())
