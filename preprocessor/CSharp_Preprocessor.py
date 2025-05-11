@@ -7,7 +7,7 @@ import os
 from collections import defaultdict
 
 # 1) Extraneous whitespace, formatting -> Removed by this step as it's not stored in Tree-sitter ASTs.
-cpp_lang = get_language('c_sharp')
+csharp_lang = get_language('c_sharp')
 parser = get_parser('c_sharp')
 
 # 2) Import removal
