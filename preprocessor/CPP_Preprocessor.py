@@ -349,10 +349,10 @@ namespace a {
 
 int x() {
     a::func(1, 2);
-    Hehe two;
+    Hehe two = NULL;
     int x = VALUE * VALUE;
     std::cout << x << std::endl;
-    return 0;
+    return x;
 }
 """
 
