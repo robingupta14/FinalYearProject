@@ -280,7 +280,7 @@ def preprocess_c(code):
     rename_map = label_code(folded_code, tree)
 
     # print(rename_map)
-    #pretty_print_node(tree.root_node, folded_code)
+    # pretty_print_node(tree.root_node, folded_code)
     labeled_code = replace_identifiers(folded_code, rename_map, tree)
     labeled_tree = parser.parse(labeled_code)
 

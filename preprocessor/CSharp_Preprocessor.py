@@ -67,7 +67,7 @@ def label_code(code_bytes, tree):
                 if parent.type == 'method_declaration' and parent.child_by_field_name("name") == node:
                     record_declaration(node_text, "fn")
                 elif parent.type == 'parameter':
-                    record_declaration(node_text, "param")
+                    record_declaration(parent.child(1).text.decode('utf-8', errors='replace'), "param")
                 elif parent.type == 'variable_declarator':
                     record_declaration(node_text, "var")
                 elif parent.type == 'field_declaration':
@@ -350,83 +350,26 @@ def preprocess_csharp(code):
 
     tree = parser.parse(folded_code)
     rename_map = label_code(folded_code, tree)
+
+    print(rename_map)
+    pretty_print_node(tree.root_node, folded_code)
     labeled_code = replace_identifiers(folded_code, rename_map, tree)
     labeled_tree = parser.parse(labeled_code)
 
+    rename_map = {}
     declared_ids = set()
     collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
     rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
-    # print(rename_map)
+
+    print(rename_map)
+
     obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
-    #pretty_print_node(labeled_tree.root_node, obfuscated_code)
+
     return obfuscated_code.decode('utf-8')
-
+    
 code = b"""
-using System;
-using System.Collections.Generic;
+    void Log(String message)
 
-namespace MyApp.Core {
-
-    public enum LogLevel
-    {
-        Info,
-        Warning,
-        Error
-    }
-
-    public struct Point
-    {
-        public int X;
-        public int Y;
-    }
-
-    public interface ILogger {
-        void Log(String message)
-    }
-
-    public class Processor
-    {
-        private ILogger logger;
-
-        public Processor(ILogger logger)
-        {
-            this.logger = logger;
-        }
-
-        public void booger(String e) {
-        }
-
-        public int Compute(Point point, LogLevel level)
-        {
-            int result = point.X + point.Y;
-
-            switch (level)
-            {
-                case LogLevel.Info:
-                    logger.Log("Info level computation");
-                    break;
-                case LogLevel.Warning:
-                    logger.Log("Warning level computation");
-                    break;
-                case LogLevel.Error:
-                    logger.Log("Error level computation");
-                    break;
-            }
-
-            return result;
-        }
-
-        public static void x(string[] args)
-        {
-            int x = 42 * 42 + 42;   
-            ILogger logger = new Logger();
-            Processor processor = new Processor(logger);
-            Point p = new Point { X = 10, Y = 20 };
-            int output = processor.Compute(p, LogLevel.Warning);
-            Console.WriteLine("Result: " + output);
-        }
-    }
-}
 """
 
 print(preprocess_csharp(code))
