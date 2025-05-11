@@ -366,10 +366,88 @@ def preprocess_csharp(code):
     obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
 
     return obfuscated_code.decode('utf-8')
-    
 code = b"""
     void Log(String message)
 
 """
 
-print(preprocess_csharp(code))
+code = b"""
+using System;
+using System.Collections.Generic;
+
+namespace MyApp.Core {
+
+    public enum LogLevel
+    {
+        Info,
+        Warning,
+        Error
+    }
+
+    public struct Point
+    {
+        public int X;
+        public int Y;
+    }
+
+    public interface ILogger {
+        void Log(String message)
+    }
+
+    public class Processor
+    {
+        private ILogger logger;
+
+        public Processor(ILogger logger)
+        {
+            this.logger = logger;
+        }
+
+        public void booger(String e) {
+        }
+
+        public int Compute(Point point, LogLevel level)
+        {
+            int result = point.X + point.Y;
+
+            switch (level)
+            {
+                case LogLevel.Info:
+                    logger.Log("Info level computation");
+                    break;
+                case LogLevel.Warning:
+                    logger.Log("Warning level computation");
+                    break;
+                case LogLevel.Error:
+                    logger.Log("Error level computation");
+                    break;
+            }
+
+            return result;
+        }
+
+        public static int x(string[] args)
+        {
+            int x = 42 * 42 + 42;   
+            ILogger logger = new Logger();
+            Processor processor = new Processor(logger);
+            Point p = new Point { X = 10, Y = 20 };
+            int output = processor.Compute(p, LogLevel.Warning);
+            Console.WriteLine("Result: " + output);
+            return x;
+        }
+    }
+}
+"""
+
+code = b"""
+public ILogger logger;
+public void process(ILogger logger)
+{
+    this.logger = logger;
+}
+
+"""
+
+
+print(preprocess_csharp(code).strip())
