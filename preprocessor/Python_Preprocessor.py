@@ -47,47 +47,15 @@ def remove_exception_and_print_text(code_bytes):
 
 
 # 6) Constant folding - 2 + 4 -> 6, have own evaluator.
+
+# one of the only reasons to love python... the eval function is a cheatcode!!!!!
 def evaluate_expression(node, code_bytes):
-    if node.type == 'parenthesized_expression':
-        return evaluate_expression(node.children[1], code_bytes)
-
-    if node.type == 'integer' or node.type == 'float' or node.type == 'true' or node.type == 'false':
-        try:
-            return int(code_bytes[node.start_byte:node.end_byte].decode('utf-8'))
-        except ValueError:
-            return None
-
-    if node.type == 'binary_expression':
-        left = evaluate_expression(node.child_by_field_name('left'), code_bytes)
-        right = evaluate_expression(node.child_by_field_name('right'), code_bytes)
-        operator_node = node.child_by_field_name('operator')
-        op = code_bytes[operator_node.start_byte:operator_node.end_byte].decode('utf-8')
-
-        try:
-            if left is not None and right is not None:
-                if op == '+':
-                    return left + right
-                elif op == '-':
-                    return left - right
-                elif op == '*':
-                    return left * right
-                elif op == '/':
-                    return left // right if right != 0 else None
-                elif op == '%':
-                    return left % right if right != 0 else None
-                elif op == '<<':
-                    return left << right
-                elif op == '>>':
-                    return left >> right
-                elif op == '|':
-                    return left | right
-                elif op == '&':
-                    return left & right
-                elif op == '^':
-                    return left ^ right
-        except Exception:
-            return None
-    return None
+    try:
+        expr = code_bytes[node.start_byte:node.end_byte].decode('utf-8')
+        allowed = {'__builtins__': None}
+        return eval(expr, allowed)
+    except Exception:
+        return None
 
 def collect_constant_folds(node, code_bytes, replacements):
     value = evaluate_expression(node, code_bytes)
@@ -156,6 +124,6 @@ def f(x=2+3):
  return x+y
 """
 
-code = b"""x=4*5+2.0-True"""
+code = b"""x=20+2.0-True"""
 
 print(preprocess_python(code).strip())
