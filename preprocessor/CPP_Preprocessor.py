@@ -34,7 +34,7 @@ def expand_and_remove_macros(code_bytes):
         os.remove(tmp_file_path)
 
 # 3)  Comment removal. C++ doesn't have docstrings.
-# Can't safely remove prints and exception strings in C because they can cause segfaults -> that is a CWE.
+# Can't safely remove prints and exception strings in C++ because they can cause segfaults -> that is a CWE.
 def remove_comments(code_bytes):
     code_str = code_bytes.decode('utf-8', errors='replace')
     code_str = re.sub(r'//.*', '', code_str)
