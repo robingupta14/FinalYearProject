@@ -133,6 +133,5 @@ class C(Base):
   def inner():
    nonlocal z
    return lambda w: w + z
-
 """
-print(preprocess_python(code).strip())
+print(preprocess_python(code).strip()) 
