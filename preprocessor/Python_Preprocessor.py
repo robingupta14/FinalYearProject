@@ -111,19 +111,28 @@ def preprocess_python(code):
     return folded_code.decode('utf-8')
 
 code = b"""
-import os;
-from sys import argv
-# comment
-def f(x=2+3):
- y=4*5
- print("msg")
- raise ValueError("err")
- logger.info("log")
- if True:
-  x=1
- return x+y
+import math as m
+from os import path as p
+
+def f(a, b=1+2):
+ x = a + b
+ def g(y): return y * x
+ with open('f') as f2:
+  for i, j in [(1,2)]:
+   pass
+ try:
+  1/0
+ except ZeroDivisionError as e:
+  print(e)
+ return [k for k in range(5)]
+
+class C(Base):
+ val = 10
+ def method(self, z):
+  self.x = z
+  def inner():
+   nonlocal z
+   return lambda w: w + z
+
 """
-
-code = b"""x=20+2.0-True"""
-
 print(preprocess_python(code).strip())
