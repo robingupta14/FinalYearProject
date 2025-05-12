@@ -10,18 +10,118 @@ from collections import defaultdict
 cpp_lang = get_language('python')
 parser = get_parser('python')
 
-# 2) Macro Expansion and Library removal
+# 2) Main Guard and Library removal
+
+def remove_imports(code_bytes):
+    code_str = code_bytes.decode('utf-8', errors='replace')
+    cleaned_code = re.sub(r'^\s*(import|from)\s+.+$', '', code_str, flags=re.MULTILINE)
+    return cleaned_code.encode('utf-8')
+
+def remove_main_guard(code_bytes):
+    code_str = code_bytes.decode('utf-8', errors='replace')
+    cleaned_code = re.sub(
+        r'(?s)if\s+__name__\s*==\s*[\'"]__main__[\'"]\s*:\s*\n(?:\s+.+\n?)*',
+        '',
+        code_str
+    )
+    return cleaned_code.encode('utf-8')
+
+# 3)  Comment removal. Python++ doesn't have docstrings.
+def remove_comments_and_docstrings(code_bytes):
+    code_str = code_bytes.decode('utf-8', errors='replace')
+    code_str = re.sub(r'#.*', '', code_str)
+    code_str = re.sub(r'("""|\'\'\')(.*?)\1', '', code_str, flags=re.DOTALL)
+    return code_str.encode('utf-8')
+
+# 4) Exception String and Print removal.
+def remove_exception_and_print_text(code_bytes):
+    code_str = code_bytes.decode('utf-8', errors='replace')
+    code_str = re.sub(r'print\s*\(\s*f?["\'].*?["\']\s*\)', 'print()', code_str)
+    code_str = re.sub(r'(raise\s+\w+\s*)\(\s*f?["\'].*?["\']\s*\)', r'\1()', code_str)
+    code_str = re.sub(r'(logger\.\w+\s*)\(\s*f?["\'].*?["\']\s*\)', r'\1()', code_str)
+
+    return code_str.encode('utf-8')
 
 
-# 3)  Comment removal. C++ doesn't have docstrings.
-# Can't safely remove prints and exception strings in C because they can cause segfaults -> that is a CWE.
-
-# 4) Renaming - Traverse the AST and use a symbol table for scope management. C++ has classes, name spaces as well.
+# 5) Renaming - Traverse the AST and use a symbol table for scope management. C++ has classes, name spaces as well.
 
 
-# 5) Constant folding - 2 + 4 -> 6, have own evaluator.
+# 6) Constant folding - 2 + 4 -> 6, have own evaluator.
+def evaluate_expression(node, code_bytes):
+    if node.type == 'parenthesized_expression':
+        return evaluate_expression(node.children[1], code_bytes)
 
-# 6) Actual preprocessing functions
+    if node.type == 'integer' or node.type == 'float' or node.type == 'true' or node.type == 'false':
+        try:
+            return int(code_bytes[node.start_byte:node.end_byte].decode('utf-8'))
+        except ValueError:
+            return None
+
+    if node.type == 'binary_expression':
+        left = evaluate_expression(node.child_by_field_name('left'), code_bytes)
+        right = evaluate_expression(node.child_by_field_name('right'), code_bytes)
+        operator_node = node.child_by_field_name('operator')
+        op = code_bytes[operator_node.start_byte:operator_node.end_byte].decode('utf-8')
+
+        try:
+            if left is not None and right is not None:
+                if op == '+':
+                    return left + right
+                elif op == '-':
+                    return left - right
+                elif op == '*':
+                    return left * right
+                elif op == '/':
+                    return left // right if right != 0 else None
+                elif op == '%':
+                    return left % right if right != 0 else None
+                elif op == '<<':
+                    return left << right
+                elif op == '>>':
+                    return left >> right
+                elif op == '|':
+                    return left | right
+                elif op == '&':
+                    return left & right
+                elif op == '^':
+                    return left ^ right
+        except Exception:
+            return None
+    return None
+
+def collect_constant_folds(node, code_bytes, replacements):
+    value = evaluate_expression(node, code_bytes)
+    if value is not None:
+        replacements.append((node.start_byte, node.end_byte, str(value)))
+        return
+
+    for child in node.children:
+        collect_constant_folds(child, code_bytes, replacements)
+
+def apply_replacements(code_bytes, replacements):
+    replacements = sorted(replacements, key=lambda x: x[0])
+    new_code = bytearray()
+    last_index = 0
+
+    for start, end, result in replacements:
+        new_code.extend(code_bytes[last_index:start])
+        new_code.extend(result.encode('utf-8'))
+        last_index = end
+
+    new_code.extend(code_bytes[last_index:])
+    return bytes(new_code)
+
+def fold_constants(code: bytes):
+    tree = parser.parse(code)
+    root = tree.root_node
+
+    replacements = []
+    collect_constant_folds(root, code, replacements)
+
+    folded_code = apply_replacements(code, replacements)
+    return folded_code
+
+# 7) Actual preprocessing functions
 
 def pretty_print_node(node, code_bytes, indent=0):
     indent_str = '  ' * indent
@@ -31,34 +131,31 @@ def pretty_print_node(node, code_bytes, indent=0):
         pretty_print_node(child, code_bytes, indent + 1)
 
 def preprocess_python(code):
-    return code.decode('utf-8')
+    importless_code = remove_imports(code)
+    commentless_code = remove_comments_and_docstrings(importless_code)
+    main_guardless_code = remove_main_guard(commentless_code)
+    cleaned_code = remove_exception_and_print_text(main_guardless_code)
+    folded_code = fold_constants(cleaned_code)
+
+    #tree = parser.parse(folded_code)
+    #pretty_print_node(tree.root_node, folded_code)
+
+    return folded_code.decode('utf-8')
 
 code = b"""
-# define VALUE 42
-# include <iostream>
-
-class Hehe {
-
-};
-
-enum Stuffs {
- E, B, C
-};
-
-// hello world ewfdwe
-namespace a {
-    void func(int x, int y) {
-        std::cout << "tr" << std::endl;
-    }
-}
-
-int x(int x) {
-    a::func(1, 2);
-    Hehe two = NULL;
-    int x = VALUE * VALUE;
-    std::cout << x << std::endl;
-    return x;
-}
+import os;
+from sys import argv
+# comment
+def f(x=2+3):
+ y=4*5
+ print("msg")
+ raise ValueError("err")
+ logger.info("log")
+ if True:
+  x=1
+ return x+y
 """
 
-print(preprocess_python(code))
+code = b"""x=4*5+2.0-True"""
+
+print(preprocess_python(code).strip())
