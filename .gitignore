@@ -12,3 +12,4 @@ deepseek_analysis/training_log.txt
 deepseek_analysis/models
 deepseek_analysis/.*
 tree-sitters/
+preprocessor/__pycache__
