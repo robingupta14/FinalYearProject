@@ -352,7 +352,7 @@ public class Test {
         } catch (ArithmeticException e) {
             e.printStackTrace();
         }
-    }
+    }   
 
     public void increment() {
         counter++;
