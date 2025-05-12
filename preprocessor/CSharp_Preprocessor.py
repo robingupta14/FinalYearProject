@@ -182,15 +182,6 @@ def collect_declared_identifiers(node, code_bytes, declared_ids):
         elif parent and parent.type in ("parameter"):
             declared_ids.add(parent.child(1).text.decode('utf-8', errors='replace'))
 
-        # elif parent and parent.type in ("class_specifier", "struct_specifier"):
-        #     declared_ids.add(node_text)
-    
-    # elif node.type == "modifier":
-    #     if parent and parent.type in (
-    #         "method_declaration", "class_declaration", "field_declaration", "constructor_declaration", "variable_declaration"
-    #     ):
-    #         declared_ids.add(node_text)
-
     elif node.type == "type_identifier":
         if parent and parent.type in ("class_specifier", "struct_specifier", "enum_specifier"):
             declared_ids.add(node_text)
