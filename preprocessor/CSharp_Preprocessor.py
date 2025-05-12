@@ -67,7 +67,7 @@ def label_code(code_bytes, tree):
                 if parent.type == 'method_declaration' and parent.child_by_field_name("name") == node:
                     record_declaration(node_text, "fn")
                 elif parent.type == 'parameter':
-                    record_declaration(parent.child(1).text.decode('utf-8', errors='replace'), "param")
+                    record_declaration(parent.child(1).text.decode('utf-8', errors='replace'), "var")
                 elif parent.type == 'variable_declarator':
                     record_declaration(node_text, "var")
                 elif parent.type == 'field_declaration':
@@ -117,7 +117,7 @@ def replace_identifiers(code_bytes, rename_map, tree):
                 if parent.type == "method_declaration" and parent.child_by_field_name("name") == node:
                     return "fn"
                 elif parent.type == "parameter":
-                    return "param"
+                    return "var"
                 elif parent.type == "variable_declarator":
                     return "var"
                 elif parent.type == "field_declaration":
@@ -132,6 +132,8 @@ def replace_identifiers(code_bytes, rename_map, tree):
                     return "enum"
                 elif parent.type == "interface_declaration":
                     return "interface"
+                else:
+                    return "var"
 
         elif node.type == "qualified_name":
             if parent and parent.type == "namespace_declaration":
@@ -171,7 +173,8 @@ def collect_declared_identifiers(node, code_bytes, declared_ids):
             "method_declaration",
             "class_declaration",
             "interface_declaration",
-            "struct_declaration"
+            "struct_declaration",
+            "assignment_expression"
         ):
             declared_ids.add(node_text)
         elif parent and parent.type in ("function_definition") and parent.child_by_field_name("declarator") == node:
@@ -206,6 +209,7 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
     # print(f"{node_text}, {declared_ids}")
 
     if node_text in declared_ids and node_text not in rename_map:   
+        print(f"my text: {node_text}")
         if node.type == "identifier":
             is_function = (
                 parent and parent.type in ("function_declarator", "function_definition") and
@@ -232,7 +236,7 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
             elif is_enum:
                 rename_map[node_text] = f"enum_{len(rename_map)}"
             elif is_param:
-                rename_map[node_text] = f"param_{len(rename_map)}"
+                rename_map[node_text] = f"var_{len(rename_map)}"
             elif is_field:
                 rename_map[node_text] = f"field_{len(rename_map)}"
             elif is_interface:
@@ -352,13 +356,15 @@ def preprocess_csharp(code):
     rename_map = label_code(folded_code, tree)
 
     print(rename_map)
-    pretty_print_node(tree.root_node, folded_code)
+    #pretty_print_node(tree.root_node, folded_code)
     labeled_code = replace_identifiers(folded_code, rename_map, tree)
     labeled_tree = parser.parse(labeled_code)
 
     rename_map = {}
     declared_ids = set()
     collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
+
+    print(declared_ids)
     rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
 
     print(rename_map)
@@ -442,12 +448,11 @@ namespace MyApp.Core {
 
 code = b"""
 public ILogger logger;
-public void process(ILogger logger)
+public void process(ILogger log)
 {
-    this.logger = logger;
+    this.logger = log;
 }
 
 """
-
 
 print(preprocess_csharp(code).strip())
