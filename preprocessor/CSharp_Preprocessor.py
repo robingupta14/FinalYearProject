@@ -372,10 +372,6 @@ def preprocess_csharp(code):
     obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
 
     return obfuscated_code.decode('utf-8')
-code = b"""
-    void Log(String message)
-
-"""
 
 code = b"""
 using System;
@@ -444,15 +440,6 @@ namespace MyApp.Core {
         }
     }
 }
-"""
-
-code = b"""
-public ILogger logger;
-public void process(ILogger log)
-{
-    this.logger = log;
-}
-
 """
 
 print(preprocess_csharp(code).strip())
