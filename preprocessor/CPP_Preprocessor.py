@@ -132,7 +132,7 @@ def label_code(code_bytes, tree):
                 elif parent.type == "enumerator":
                     record_declaration(node_text, "enum")
                 elif parent.type in ("init_declarator", "parameter_declaration"):
-                    record_declaration(node_text, "var")
+                    record_declaration(node_text, "param")
                 elif parent.type in ("class_specifier", "struct_specifier"):
                     record_declaration(node_text, "class")
 
@@ -347,7 +347,7 @@ namespace a {
     }
 }
 
-int x() {
+int x(int x) {
     a::func(1, 2);
     Hehe two = NULL;
     int x = VALUE * VALUE;
