@@ -134,6 +134,8 @@ def label_code(code_bytes, tree):
                     record_declaration(node_text, "interface")
                 elif parent.type == 'function_definition':
                     record_declaration(node_text, "function")
+                elif parent.type == "pattern_list" or parent.type == "list_comprehension":
+                    record_declaration(node_text, "var")
 
         elif node.type == "qualified_name":
             if parent and parent.type == "namespace_declaration":
@@ -443,7 +445,7 @@ def preprocess_python(code):
     rename_map = label_code(folded_code, tree)
     
     print(rename_map)
-   #pretty_print_node(tree.root_node, folded_code)
+    pretty_print_node(tree.root_node, folded_code)
     labeled_code = replace_identifiers(folded_code, rename_map, tree)
     labeled_tree = parser.parse(labeled_code)
 
@@ -487,8 +489,14 @@ class C(Base):
 """
 
 code = b"""
-def foo(a, b):
-    return a+b
+def foo():
+    for i, j in [(1,2)]:
+        try:
+            1/0
+        except ZeroDivisionError as e:
+            print(e)
+        return [k for k in range(5)]
+
 """
 
 print(preprocess_python(code).strip()) 
