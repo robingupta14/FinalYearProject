@@ -88,7 +88,6 @@ def remove_exception_and_print_text(code_bytes):
 
 
 # 5) Renaming - Traverse the AST and use a symbol table for scope management. C++ has classes, name spaces as well.
-
 def label_code(code_bytes, tree):
     declared_ids = defaultdict(list)
     rename_map = {}
@@ -132,6 +131,8 @@ def label_code(code_bytes, tree):
                     record_declaration(node_text, "enum")
                 elif parent.type == 'interface_declaration':
                     record_declaration(node_text, "interface")
+                elif parent.type == 'function_definition':
+                    record_declaration(node_text, "function")
 
         elif node.type == "qualified_name":
             if parent and parent.type == "namespace_declaration":
@@ -182,6 +183,8 @@ def replace_identifiers(code_bytes, rename_map, tree):
                     return "enum"
                 elif parent.type == "interface_declaration":
                     return "interface"
+                elif parent.type == "function_definition":
+                    return "function"
                 else:
                     return "var"
 
@@ -379,7 +382,6 @@ def fold_constants(code: bytes):
     return folded_code
 
 # 6) Constant folding - 2 + 4 -> 6, have own evaluator.
-
 # one of the only reasons to love python... the eval function is a cheatcode!!!!!
 def evaluate_expression(node, code_bytes):
     try:
@@ -439,19 +441,20 @@ def preprocess_python(code):
     tree = parser.parse(folded_code)
     rename_map = label_code(folded_code, tree)
     
-    #print(rename_map)
-    #pretty_print_node(tree.root_node, folded_code)
+    print(rename_map)
+   #pretty_print_node(tree.root_node, folded_code)
     labeled_code = replace_identifiers(folded_code, rename_map, tree)
     labeled_tree = parser.parse(labeled_code)
 
     rename_map = {}
     declared_ids = set()
+    print(declared_ids)
     collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
 
     #print(declared_ids)
     rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
 
-    #print(rename_map)
+    print(rename_map)
 
     obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
     importless_code = remove_imports(obfuscated_code)
@@ -459,15 +462,32 @@ def preprocess_python(code):
 
 code = b"""
 import math as m
+from os import path as p
 
+def f(a, b=1+2):
+ x = a + b
+ def g(y): return y * x
+ with open('f') as f2:
+  for i, j in [(1,2)]:
+   pass
+ try:
+  1/0
+ except ZeroDivisionError as e:
+  print(e)
+ return [k for k in range(5)]
 
-def sum(a, b):
-    return (a + b)
-
-a = int(input('Enter 1st number: '))
-m = m.pi
-
-print(f'Sum of {a} and {m} is {sum(a, m)}')
-
+class C(Base):
+ val = 10
+ def method(self, z):
+  self.x = z
+  def inner():
+   nonlocal z
+   return lambda w: w + z
 """
+
+code = b"""
+def foo(a, b):
+    return a+b
+"""
+
 print(preprocess_python(code).strip()) 
