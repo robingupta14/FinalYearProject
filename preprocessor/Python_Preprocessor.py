@@ -108,7 +108,7 @@ def label_code(code_bytes, tree):
         node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
         parent = node.parent
 
-        if node.type in ('block', 'class_declaration', 'struct_declaration', 'interface_declaration', 'enum_declaration'):
+        if node.type in ('block', 'class_definition', 'struct_declaration', 'interface_declaration', 'enum_declaration'):
             enter_scope()
 
         if node.type == 'identifier':
@@ -122,7 +122,7 @@ def label_code(code_bytes, tree):
                     record_declaration(node_text, "var")
                 elif parent.type == 'field_declaration':
                     record_declaration(node_text, "field")
-                elif parent.type == 'class_declaration':
+                elif parent.type == 'class_definition':
                     record_declaration(node_text, "class")
                 elif parent.type == 'struct_declaration':
                     record_declaration(node_text, "struct")
@@ -136,6 +136,8 @@ def label_code(code_bytes, tree):
                     record_declaration(node_text, "function")
                 elif parent.type == "pattern_list" or parent.type == "list_comprehension":
                     record_declaration(node_text, "var")
+                elif parent.type == "assignment":
+                    record_declaration(node_text, "var")
 
         elif node.type == "qualified_name":
             if parent and parent.type == "namespace_declaration":
@@ -144,7 +146,7 @@ def label_code(code_bytes, tree):
         for child in node.children:
             collect_and_label(child)
 
-        if node.type in ('block', 'class_declaration', 'struct_declaration', 'interface_declaration', 'enum_declaration'):
+        if node.type in ('block', 'class_definition', 'struct_declaration', 'interface_declaration', 'enum_declaration'):
             exit_scope()
 
     enter_scope()
@@ -176,7 +178,7 @@ def replace_identifiers(code_bytes, rename_map, tree):
                     return "var"
                 elif parent.type == "field_declaration":
                     return "field"
-                elif parent.type == "class_declaration":
+                elif parent.type == "class_definition":
                     return "class"
                 elif parent.type == "struct_declaration":
                     return "struct"
@@ -445,7 +447,7 @@ def preprocess_python(code):
     rename_map = label_code(folded_code, tree)
     
     print(rename_map)
-    pretty_print_node(tree.root_node, folded_code)
+    #pretty_print_node(tree.root_node, folded_code)
     labeled_code = replace_identifiers(folded_code, rename_map, tree)
     labeled_tree = parser.parse(labeled_code)
 
@@ -479,24 +481,12 @@ def f(a, b=1+2):
   print(e)
  return [k for k in range(5)]
 
-class C(Base):
+class C():
  val = 10
  def method(self, z):
   self.x = z
   def inner():
    nonlocal z
-   return lambda w: w + z
-"""
-
-code = b"""
-def foo():
-    for i, j in [(1,2)]:
-        try:
-            1/0
-        except ZeroDivisionError as e:
-            print(e)
-        return [k for k in range(5)]
-
 """
 
 print(preprocess_python(code).strip()) 
