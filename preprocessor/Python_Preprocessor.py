@@ -115,8 +115,9 @@ def label_code(code_bytes, tree):
             if parent:
                 if parent.type == 'method_declaration' and parent.child_by_field_name("name") == node:
                     record_declaration(node_text, "fn")
-                elif parent.type == 'parameter':
-                    record_declaration(parent.child(1).text.decode('utf-8', errors='replace'), "var")
+                elif parent.type == 'parameters':
+                    for child in parent.children:
+                        record_declaration(child.text.decode('utf-8', errors='replace'), "var")
                 elif parent.type == 'variable_declarator':
                     record_declaration(node_text, "var")
                 elif parent.type == 'field_declaration':
@@ -167,7 +168,7 @@ def replace_identifiers(code_bytes, rename_map, tree):
             if parent:
                 if parent.type == "method_declaration" and parent.child_by_field_name("name") == node:
                     return "fn"
-                elif parent.type == "parameter":
+                elif parent.type == "parameters":
                     return "var"
                 elif parent.type == "variable_declarator":
                     return "var"
