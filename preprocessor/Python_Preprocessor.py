@@ -11,11 +11,55 @@ cpp_lang = get_language('python')
 parser = get_parser('python')
 
 # 2) Main Guard and Library removal
-
 def remove_imports(code_bytes):
     code_str = code_bytes.decode('utf-8', errors='replace')
-    cleaned_code = re.sub(r'^\s*(import|from)\s+.+$', '', code_str, flags=re.MULTILINE)
-    return cleaned_code.encode('utf-8')
+    lines = code_str.split('\n')
+    alias_map = {}
+    new_lines = []
+
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith('import '):
+            imports = stripped[len('import '):].split(',')
+            for imp in imports:
+                parts = imp.strip().split()
+                if 'as' in parts:
+                    idx = parts.index('as')
+                    module = parts[idx - 1]
+                    alias = parts[idx + 1]
+                    alias_map[alias] = module
+                else:
+                    module = parts[0]
+                    alias_map[module] = module
+            continue
+
+        elif stripped.startswith('from '):
+            parts = stripped.split()
+            if 'import' in parts:
+                import_idx = parts.index('import')
+                base_module = '.'.join(parts[1:import_idx])
+                imported = ' '.join(parts[import_idx + 1:])
+                symbols = imported.split(',')
+                for symbol in symbols:
+                    sym_parts = symbol.strip().split()
+                    if 'as' in sym_parts:
+                        idx = sym_parts.index('as')
+                        original = sym_parts[idx - 1]
+                        alias = sym_parts[idx + 1]
+                        alias_map[alias] = f"{base_module}.{original}"
+                    else:
+                        name = sym_parts[0]
+                        alias_map[name] = f"{base_module}.{name}"
+            continue
+
+        new_lines.append(line)
+
+    final_code = '\n'.join(new_lines)
+    for alias, full_name in alias_map.items():
+        final_code = final_code.replace(f"{alias}.", f"{full_name}.")
+
+    return final_code.encode('utf-8')
+
 
 def remove_main_guard(code_bytes):
     code_str = code_bytes.decode('utf-8', errors='replace')
@@ -387,15 +431,15 @@ def pretty_print_node(node, code_bytes, indent=0):
         pretty_print_node(child, code_bytes, indent + 1)
 
 def preprocess_python(code):
-    importless_code = remove_imports(code)
-    commentless_code = remove_comments_and_docstrings(importless_code)
+    commentless_code = remove_comments_and_docstrings(code)
     main_guardless_code = remove_main_guard(commentless_code)
     cleaned_code = remove_exception_and_print_text(main_guardless_code)
     folded_code = fold_constants(cleaned_code)
     
     tree = parser.parse(folded_code)
     rename_map = label_code(folded_code, tree)
-    print(rename_map)
+    
+    #print(rename_map)
     #pretty_print_node(tree.root_node, folded_code)
     labeled_code = replace_identifiers(folded_code, rename_map, tree)
     labeled_tree = parser.parse(labeled_code)
@@ -404,37 +448,26 @@ def preprocess_python(code):
     declared_ids = set()
     collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
 
-    print(declared_ids)
+    #print(declared_ids)
     rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
 
-    print(rename_map)
+    #print(rename_map)
 
     obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
-
-    return obfuscated_code.decode('utf-8')
+    importless_code = remove_imports(obfuscated_code)
+    return importless_code.decode('utf-8')
 
 code = b"""
 import math as m
-from os import path as p
 
-def f(a, b=1+2):
- x = a + b
- def g(y): return y * x
- with open('f') as f2:
-  for i, j in [(1,2)]:
-   pass
- try:
-  1/0
- except ZeroDivisionError as e:
-  print(e)
- return [k for k in range(5)]
 
-class C(Base):
- val = 10
- def method(self, z):
-  self.x = z
-  def inner():
-   nonlocal z
-   return lambda w: w + z
+def sum(a, b):
+    return (a + b)
+
+a = int(input('Enter 1st number: '))
+m = m.pi
+
+print(f'Sum of {a} and {m} is {sum(a, m)}')
+
 """
 print(preprocess_python(code).strip()) 
