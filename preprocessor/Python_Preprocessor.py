@@ -57,7 +57,6 @@ def remove_imports(code_bytes):
 
     return final_code.encode('utf-8')
 
-
 def remove_main_guard(code_bytes):
     code_str = code_bytes.decode('utf-8', errors='replace')
     cleaned_code = re.sub(
