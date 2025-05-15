@@ -83,25 +83,31 @@ def label_code(code_bytes, tree):
         node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
         parent = node.parent
 
-        if node.type in ('block', 'class_declaration', 'interface_declaration', 'enum_declaration'):
+        if node.type in ('block', 'class_declaration', 'interface_declaration', 'enum_declaration', 'function_definition'):
             enter_scope()
 
-        if node.type == 'identifier':
+        if node.type == 'name':
             if parent:
-                if parent.type == 'method_declaration' and parent.child_by_field_name("name") == node:
-                    record_declaration(node_text, "method")
+                if (parent.parent and parent.parent.type == "subscript_expression"): 
+                    pass
+                elif parent.type == 'function_call_expression' or parent.type == "method_call_expression" or parent.type == "scoped_call_expression":
+                    pass
+                elif parent.type == 'const_element':
+                    record_declaration(node_text, "var")
                 elif parent.type == 'formal_parameter':
                     record_declaration(node_text, "param")
                 elif parent.type == 'variable_declarator':
                     record_declaration(node_text, "var")
                 elif parent.type == 'field_declaration':
                     record_declaration(node_text, "field")
-                elif parent.type == 'class_declaration':
+                elif parent.type == 'class_declaration' or parent.type == 'object_creation_expression':
                     record_declaration(node_text, "class")
                 elif parent.type == 'enum_declaration':
                     record_declaration(node_text, "enum")
                 elif parent.type == 'interface_declaration':
                     record_declaration(node_text, "interface")
+                elif parent.type == 'method_declaration' or parent.type == "function_definition":
+                    record_declaration(node_text, "fn")
                 else:
                     record_declaration(node_text, "var")
 
@@ -112,7 +118,7 @@ def label_code(code_bytes, tree):
         for child in node.children:
             collect_and_label(child)
 
-        if node.type in ('block', 'class_declaration', 'interface_declaration', 'enum_declaration'):
+        if node.type in ('block', 'class_declaration', 'interface_declaration', 'enum_declaration', 'function_declaration'):
             exit_scope()
 
     enter_scope()
@@ -134,27 +140,37 @@ def replace_identifiers(code_bytes, rename_map, tree):
 
     def get_kind(node):
         parent = node.parent
-        if node.type == "identifier":
+        if node.type == "name":
             if parent:
-                if parent.type == "method_declaration" and parent.child_by_field_name("name") == node:
-                    return "method"
-                elif parent.type == "formal_parameter":
-                    return "param"
+                if parent.type == "const_element":
+                    return "var"
+                elif parent.type == "function_definition":
+                    return "fn"
+                elif parent.type == "class_declaration" or parent.type == "object_creation_expression":
+                    return "class"
+                elif parent.type == "parameters":
+                    return "var"
                 elif parent.type == "variable_declarator":
                     return "var"
-                elif parent.type == "field_declaration":
-                    return "field"
-                elif parent.type == "class_declaration":
+                elif parent.type == "class_definition":
                     return "class"
+                elif parent.type == "struct_declaration":
+                    return "struct"
                 elif parent.type == "enum_declaration":
+                    return "enumtype"
+                elif parent.type == "enum_member_declaration":
                     return "enum"
                 elif parent.type == "interface_declaration":
                     return "interface"
+                elif parent.type == "scoped_call_expression":
+                    if parent.child(2) == node:
+                        return "fn"
+                    else:
+                        return "class"
+                elif parent.type == "method_declaration" or parent.type == "function_call_expression" or parent.type == "member_call_expression":
+                    return "fn"
                 else:
                     return "var"
-        elif node.type == "qualified_name":
-            if parent and parent.type == "package_declaration":
-                return "package"
 
         return None
 
@@ -163,7 +179,7 @@ def replace_identifiers(code_bytes, rename_map, tree):
         for child in node.children:
             visit(child)
 
-        if node.type in ("identifier", "qualified_name"):
+        if node.type in ("name", "qualified_name"):
             kind = get_kind(node)
             if kind:
                 original_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
@@ -181,14 +197,19 @@ def collect_declared_identifiers(node, code_bytes, declared_ids):
     node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
     parent = node.parent
 
-    if node.type == "identifier":
+    if node.type == "name":
         if parent and parent.type in (
-            "enum_declaration",
+            "const_element",
             "variable_declarator",
             "field_declaration",
+            "function_definition",
+            "object_creation_expression",
             "method_declaration",
             "class_declaration",
-            "interface_declaration"
+            "interface_declaration",
+            "function_call_expression",
+            "scoped_call_expression"
+            "member_call_expression"
         ):
             declared_ids.add(node_text)
         elif parent and parent.type == "parameter":
@@ -205,21 +226,21 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
     node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
     parent = node.parent
     if node_text in declared_ids and node_text not in rename_map:   
-        if node.type == "identifier":
-            print(f"{node_text} {node.type}")
+        if node.type == "name":
+            is_const = parent and parent.type == "const_element"
             is_function = (
-                parent and parent.type == "method_declaration" and parent.child_by_field_name("name") == node
-            )
-            is_class = parent and parent.type == "class_declaration"
+                parent and parent.type == "function_definition" and parent.child_by_field_name("name") == node
+            ) 
+            is_method = parent and parent.type =="method_declaration"
             is_enum = parent and parent.type == "enum_declaration"
             is_param = parent and parent.type == "parameter"
             is_field = parent and parent.type == "field_declaration"
             is_interface = parent and parent.type == "interface_declaration"
-
-            if is_class:
-                rename_map[node_text] = f"class_{len(rename_map)}"
-            elif is_function:
-                rename_map[node_text] = f"method_{len(rename_map)}"
+            is_call = parent and parent.type == "function_call_expression" or (parent and parent.type == "member_call_expression") or (parent and parent.type == "scoped_call_expression")
+            if is_const:
+                rename_map[node_text] = f"const_{len(rename_map)}"
+            elif is_function or is_method or is_call:
+                rename_map[node_text] = f"fn_{len(rename_map)}"
             elif is_enum:
                 rename_map[node_text] = f"enum_{len(rename_map)}"
             elif is_param:
@@ -230,9 +251,7 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
                 rename_map[node_text] = f"interface_{len(rename_map)}"
             else:
                 rename_map[node_text] = f"var_{len(rename_map)}"
-        
-        if parent and parent.type == "update_expression":
-            rename_map[node_text] = f"var_{len(rename_map)}"
+                
 
     for child in node.children:
         rename_identifiers(child, code_bytes, declared_ids, rename_map)
@@ -336,27 +355,23 @@ def preprocess_php(code):
     tree = parser.parse(folded_code)
     pretty_print_node(tree.root_node, folded_code)
     
-    # rename_map = label_code(folded_code, tree)
-    # labeled_code = replace_identifiers(folded_code, rename_map, tree)
-    # labeled_tree = parser.parse(labeled_code)   
+    rename_map = label_code(folded_code, tree)
+    # print(f"rens {rename_map}")
+    labeled_code = replace_identifiers(folded_code, rename_map, tree)
+    labeled_tree = parser.parse(labeled_code)   
 
-    # declared_ids = set()
-    # collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
-    # rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
-    # obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
+    declared_ids = set()
+    collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
+    rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
+    obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
 
-    # print(f"e {rename_map}")
-    # print(f"h {declared_ids}")
+    # print(f"rens {rename_map}")
+    # print(f"decls {declared_ids}")
 
-    return folded_code.decode('utf-8')
+    return obfuscated_code.decode('utf-8')
 
 code = b"""
 <?php
-define('MY_CONST', 42);
-const MAX_VAL = 100;
-
-include 'utils.php'; require_once("config.php");
-
 class MyClass {
   public static $count = 0;
   private $name;
@@ -380,6 +395,7 @@ $a = $_GET['a'] ?? 1;
 $b = $_POST['b'] ?? 2;
 $c = add($a, $b);
 $obj = new MyClass("World");
+
 $obj->greet();
 MyClass::inc();
 echo "Sum is $c\n";
@@ -387,32 +403,4 @@ $c = 32+2+(4+2.0)
 ?>
 """
 
-code = b"""
-<?php
-define('MY_CONST', 42);
-const MAX_VAL = 100;
-
-class MyClass {
-  public static $count = 0;
-
-  static function inc() {
-    self::$count++;
-  }
-}
-
-function add($a, $b) {
-  return $a + $b;
-}
-
-$a = $_GET['a'] ?? 1;
-$b = $_POST['b'] ?? 2;
-$c = add($a, $b);
-$obj = new MyClass("World");
-$obj->greet();
-MyClass::inc();
-echo "Sum is $c\n";
-$c = 32+2+(4+2.0)
-?>
-"""
-
-(preprocess_php(code))
+print(preprocess_php(code))
