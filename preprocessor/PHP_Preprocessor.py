@@ -356,23 +356,23 @@ def preprocess_php(code):
     cleaned_code = remove_exception_and_print_text(documentationless_code)
     folded_code = fold_constants(cleaned_code)
 
-    tree = parser.parse(folded_code)
-    #pretty_print_node(tree.root_node, folded_code)
+    # tree = parser.parse(folded_code)
+    # #pretty_print_node(tree.root_node, folded_code)
     
-    rename_map = label_code(folded_code, tree)
-    # print(f"rens {rename_map}")
-    labeled_code = replace_identifiers(folded_code, rename_map, tree)
-    labeled_tree = parser.parse(labeled_code)   
+    # rename_map = label_code(folded_code, tree)
+    # # print(f"rens {rename_map}")
+    # labeled_code = replace_identifiers(folded_code, rename_map, tree)
+    # labeled_tree = parser.parse(labeled_code)   
 
-    declared_ids = set()
-    collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
-    rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
-    obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
+    # declared_ids = set()
+    # collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
+    # rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
+    # obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
 
-    # print(f"rens {rename_map}")
-    # print(f"decls {declared_ids}")
+    # # print(f"rens {rename_map}")
+    # # print(f"decls {declared_ids}")
 
-    return obfuscated_code.decode('utf-8')
+    return folded_code.decode('utf-8')
 
 code = b"""
 <?php

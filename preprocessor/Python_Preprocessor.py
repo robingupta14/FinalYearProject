@@ -442,26 +442,26 @@ def preprocess_python(code):
     cleaned_code = remove_exception_and_print_text(main_guardless_code)
     folded_code = fold_constants(cleaned_code)
     
-    tree = parser.parse(folded_code)
-    rename_map = label_code(folded_code, tree)
+#     tree = parser.parse(folded_code)
+#     rename_map = label_code(folded_code, tree)
     
-   # print(rename_map)
-    #pretty_print_node(tree.root_node, folded_code)
-    labeled_code = replace_identifiers(folded_code, rename_map, tree)
-    labeled_tree = parser.parse(labeled_code)
+#    # print(rename_map)
+#     #pretty_print_node(tree.root_node, folded_code)
+#     labeled_code = replace_identifiers(folded_code, rename_map, tree)
+#     labeled_tree = parser.parse(labeled_code)
 
-    rename_map = {}
-    declared_ids = set()
-    #print(declared_ids)
-    collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
+#     rename_map = {}
+#     declared_ids = set()
+#     #print(declared_ids)
+#     collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
 
-    #print(declared_ids)
-    rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
+#     #print(declared_ids)
+#     rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
 
-    #print(rename_map)
+#     #print(rename_map)
 
-    obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
-    importless_code = remove_imports(obfuscated_code)
+#     obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
+    importless_code = remove_imports(folded_code)
     return importless_code.decode('utf-8')
 
 code = b"""

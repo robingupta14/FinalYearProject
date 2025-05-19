@@ -7,7 +7,7 @@ from Python_Preprocessor import preprocess_python
 from PHP_Preprocessor import preprocess_php
         
 DATASET_ROOT = "../../CrossVul"
-NEW_DATASET = "../../Preprocessed/Rename"
+NEW_DATASET = "../../Preprocessed/NoRename"
 
 
 CWE_IDS = {"CWE-22", "CWE-79", "CWE-89", "CWE-787"}

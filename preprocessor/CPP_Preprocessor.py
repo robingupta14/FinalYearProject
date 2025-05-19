@@ -314,18 +314,18 @@ def preprocess_cpp(code):
     cleaned_code = remove_comments(expanded_code)
     folded_code = fold_constants(cleaned_code)
 
-    tree = parser.parse(folded_code)
-    rename_map = label_code(folded_code, tree)
-    labeled_code = replace_identifiers(folded_code, rename_map, tree)
-    labeled_tree = parser.parse(labeled_code)
+    # tree = parser.parse(folded_code)
+    # rename_map = label_code(folded_code, tree)
+    # labeled_code = replace_identifiers(folded_code, rename_map, tree)
+    # labeled_tree = parser.parse(labeled_code)
 
-    declared_ids = set()
-    collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
-    rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
-    # print(rename_map)
-    obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
-    #pretty_print_node(labeled_tree.root_node, obfuscated_code)
-    return obfuscated_code.decode('utf-8')
+    # declared_ids = set()
+    # collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
+    # rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
+    # # print(rename_map)
+    # obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
+    # #pretty_print_node(labeled_tree.root_node, obfuscated_code)
+    return folded_code.decode('utf-8')
 
 
 code = b"""
