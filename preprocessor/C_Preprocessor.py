@@ -320,5 +320,3 @@ int x() {
     return x
 }
 """
-
-print(preprocess_c(code).strip())

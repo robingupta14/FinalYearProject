@@ -186,7 +186,7 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
     parent = node.parent
     if node_text in declared_ids and node_text not in rename_map:   
         if node.type == "identifier":
-            print(f"{node_text} {node.type}")
+            #print(f"{node_text} {node.type}")
             is_function = (
                 parent and parent.type == "method_declaration" and parent.child_by_field_name("name") == node
             )
@@ -314,7 +314,7 @@ def preprocess_java(code):
     folded_code = fold_constants(cleaned_code)
 
     tree = parser.parse(folded_code)
-    pretty_print_node(tree.root_node, folded_code)
+    #pretty_print_node(tree.root_node, folded_code)
     rename_map = label_code(folded_code, tree)
     labeled_code = replace_identifiers(folded_code, rename_map, tree)
     labeled_tree = parser.parse(labeled_code)   
@@ -324,8 +324,8 @@ def preprocess_java(code):
     rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
     obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
 
-    print(f"e {rename_map}")
-    print(f"h {declared_ids}")
+    #print(f"e {rename_map}")
+    #print(f"h {declared_ids}")
 
     return obfuscated_code.decode('utf-8')
 
@@ -377,5 +377,3 @@ public class Test {
     }
 }
 """
-
-print(preprocess_java(code))

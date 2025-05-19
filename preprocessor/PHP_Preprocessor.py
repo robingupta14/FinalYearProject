@@ -33,8 +33,12 @@ def remove_imports(code_bytes):
             cleaned_lines.append(line)
 
     cleaned_code = '\n'.join(cleaned_lines)
-    for alias, full_name in alias_map.items():
-        cleaned_code = re.sub(rf'\b{re.escape(alias)}\b(?=\s*::)', full_name, cleaned_code)
+    for alias, full_name in alias_map.items():cleaned_code = re.sub(
+            rf'\b{re.escape(alias)}\b(?=\s*::)',
+            full_name.replace('\\', r'\\'),  
+            cleaned_code
+        )
+
     return cleaned_code.encode('utf-8')
 
 # 3)  Comment removal.
@@ -353,7 +357,7 @@ def preprocess_php(code):
     folded_code = fold_constants(cleaned_code)
 
     tree = parser.parse(folded_code)
-    pretty_print_node(tree.root_node, folded_code)
+    #pretty_print_node(tree.root_node, folded_code)
     
     rename_map = label_code(folded_code, tree)
     # print(f"rens {rename_map}")
@@ -403,4 +407,4 @@ $c = 32+2+(4+2.0)
 ?>
 """
 
-print(preprocess_php(code))
+preprocess_php(code)

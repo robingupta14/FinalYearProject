@@ -355,5 +355,3 @@ int x(int x) {
     return x;
 }
 """
-
-print(preprocess_cpp(code))

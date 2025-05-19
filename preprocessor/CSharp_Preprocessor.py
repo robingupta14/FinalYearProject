@@ -35,7 +35,8 @@ def remove_exception_and_print_text(code_bytes):
     code_str = re.sub(r'(throw\s+new\s+\w+\s*\()\s*".*?"(\s*\))', r'\1\2', code_str)
     return code_str.encode('utf-8')
 
-# 5) Renaming
+from collections import defaultdict
+
 def label_code(code_bytes, tree):
     declared_ids = defaultdict(list)
     rename_map = {}
@@ -44,49 +45,60 @@ def label_code(code_bytes, tree):
 
     def enter_scope():
         scope_stack.append(set())
+
     def exit_scope():
         scope_stack.pop()
+
     def current_scope_level():
         return len(scope_stack)
+
     def record_declaration(name, kind):
         declared_ids[name].append((kind, current_scope_level()))
         scope_stack[-1].add(name)
 
+    def safe_decode(node):
+        if node is not None:
+            return code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
+        return ""
+
     def collect_and_label(node):
-        node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
+        if node is None:
+            return
+
+        node_text = safe_decode(node)
         parent = node.parent
 
         if node.type in ('block', 'class_declaration', 'struct_declaration', 'interface_declaration', 'enum_declaration'):
             enter_scope()
 
-        if node.type == 'identifier':
-            if parent:
-                if parent.type == 'method_declaration' and parent.child_by_field_name("name") == node:
+        if node.type == 'identifier' and parent is not None:
+            if parent.type == 'method_declaration':
+                name_node = parent.child_by_field_name("name")
+                if name_node is not None and name_node == node:
                     record_declaration(node_text, "fn")
-                elif parent.type == 'parameter':
-                    record_declaration(parent.child(1).text.decode('utf-8', errors='replace'), "var")
-                elif parent.type == 'variable_declarator':
-                    record_declaration(node_text, "var")
-                elif parent.type == 'field_declaration':
-                    record_declaration(node_text, "field")
-                elif parent.type == 'class_declaration':
-                    record_declaration(node_text, "class")
-                elif parent.type == 'struct_declaration':
-                    record_declaration(node_text, "struct")
-                elif parent.type == 'enum_declaration':
-                    record_declaration(node_text, "enumtype")
-                elif parent.type == 'enum_member_declaration':
-                    record_declaration(node_text, "enum")
-                elif parent.type == 'interface_declaration':
-                    record_declaration(node_text, "interface")
+            elif parent.type == 'parameter':
+                name_node = parent.child_by_field_name("name")
+                if name_node is not None:
+                    record_declaration(safe_decode(name_node), "var")
+            elif parent.type == 'variable_declarator':
+                record_declaration(node_text, "var")
+            elif parent.type == 'field_declaration':
+                record_declaration(node_text, "field")
+            elif parent.type == 'class_declaration':
+                record_declaration(node_text, "class")
+            elif parent.type == 'struct_declaration':
+                record_declaration(node_text, "struct")
+            elif parent.type == 'enum_declaration':
+                record_declaration(node_text, "enumtype")
+            elif parent.type == 'enum_member_declaration':
+                record_declaration(node_text, "enum")
+            elif parent.type == 'interface_declaration':
+                record_declaration(node_text, "interface")
 
-        elif node.type == "qualified_name":
-            if parent and parent.type == "namespace_declaration":
-                record_declaration(node_text, "ns")
-
+        elif node.type == "qualified_name" and parent is not None and parent.type == "namespace_declaration":
+            record_declaration(node_text, "ns")
         for child in node.children:
             collect_and_label(child)
-
         if node.type in ('block', 'class_declaration', 'struct_declaration', 'interface_declaration', 'enum_declaration'):
             exit_scope()
 
@@ -158,11 +170,22 @@ def replace_identifiers(code_bytes, rename_map, tree):
     return b''.join(result)
 
 def collect_declared_identifiers(node, code_bytes, declared_ids):
-    node_text = code_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='replace')
-    parent = node.parent
+    def safe_decode(n):
+        if n is None:
+            return ""
+        return code_bytes[n.start_byte:n.end_byte].decode('utf-8', errors='replace')
+
+    def safe_text(n):
+        try:
+            return n.text.decode('utf-8', errors='replace')
+        except Exception:
+            return ""
+
+    node_text = safe_decode(node)
+    parent = getattr(node, "parent", None)
 
     if node.type == "identifier":
-        if parent and parent.type in (
+        if parent and parent.type in {
             "enum_declaration",
             "enum_member_declaration",
             "variable_declarator",
@@ -172,20 +195,29 @@ def collect_declared_identifiers(node, code_bytes, declared_ids):
             "interface_declaration",
             "struct_declaration",
             "assignment_expression"
-        ):
+        }:
             declared_ids.add(node_text)
-        elif parent and parent.type in ("function_definition") and parent.child_by_field_name("declarator") == node:
-            declared_ids.add(node_text)
-        elif parent and parent.type in ("parameter"):
-            declared_ids.add(parent.child(1).text.decode('utf-8', errors='replace'))
+
+        elif parent and parent.type == "function_definition":
+            declarator = parent.child_by_field_name("declarator")
+            if declarator == node:
+                declared_ids.add(node_text)
+
+        elif parent and parent.type == "parameter":
+            name_node = parent.child_by_field_name("name")
+            declared_ids.add(safe_decode(name_node))
 
     elif node.type == "type_identifier":
-        if parent and parent.type in ("class_specifier", "struct_specifier", "enum_specifier"):
+        if parent and parent.type in {
+            "class_specifier",
+            "struct_specifier",
+            "enum_specifier"
+        }:
             declared_ids.add(node_text)
-    
+
     elif node.type == "qualified_name":
-        if parent and parent.type in ("namespace_declaration"):
-            declared_ids.add(node.text.decode('utf-8', errors='replace'))
+        if parent and parent.type == "namespace_declaration":
+            declared_ids.add(safe_text(node))
 
     for child in node.children:
         collect_declared_identifiers(child, code_bytes, declared_ids)
@@ -197,7 +229,7 @@ def rename_identifiers(node, code_bytes, declared_ids, rename_map):
     # print(f"{node_text}, {declared_ids}")
 
     if node_text in declared_ids and node_text not in rename_map:   
-        print(f"my text: {node_text}")
+        #print(f"my text: {node_text}")
         if node.type == "identifier":
             is_function = (
                 parent and parent.type in ("function_declarator", "function_definition") and
@@ -334,29 +366,40 @@ def pretty_print_node(node, code_bytes, indent=0):
         pretty_print_node(child, code_bytes, indent + 1)
 
 def preprocess_csharp(code):
+    print("a")
     importless_code = remove_using(code)
     commentless_code = remove_comments(importless_code)
+    
+    print("b")
     documentationless_code = remove_docstrings(commentless_code)
     cleaned_code = remove_exception_and_print_text(documentationless_code)
     folded_code = fold_constants(cleaned_code)
-
+    
+    print("c")
     tree = parser.parse(folded_code)
+    print("caa")
     rename_map = label_code(folded_code, tree)
-
-    print(rename_map)
+    print("cab")
+    print("ca")
+    #print(rename_map)
     #pretty_print_node(tree.root_node, folded_code)
     labeled_code = replace_identifiers(folded_code, rename_map, tree)
+    print("cb")
     labeled_tree = parser.parse(labeled_code)
-
+    print("cc")
+    
+    print("d")
     rename_map = {}
     declared_ids = set()
     collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
-
-    print(declared_ids)
+    
+    print("e")
+    #print(declared_ids)
     rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
 
-    print(rename_map)
-
+    #print(rename_map)
+    
+    print("f")
     obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
 
     return obfuscated_code.decode('utf-8')
@@ -429,5 +472,3 @@ namespace MyApp.Core {
     }
 }
 """
-
-print(preprocess_csharp(code).strip())
