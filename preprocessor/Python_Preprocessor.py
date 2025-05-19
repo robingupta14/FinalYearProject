@@ -32,22 +32,25 @@ def remove_imports(code_bytes):
 
         elif stripped.startswith('from '):
             parts = stripped.split()
+            symbols = []
             if 'import' in parts:
                 import_idx = parts.index('import')
                 base_module = '.'.join(parts[1:import_idx])
                 imported = ' '.join(parts[import_idx + 1:])
                 symbols = imported.split(',')
-                for symbol in symbols:
-                    sym_parts = symbol.strip().split()
-                    if 'as' in sym_parts:
-                        idx = sym_parts.index('as')
-                        original = sym_parts[idx - 1]
-                        alias = sym_parts[idx + 1]
-                        alias_map[alias] = f"{base_module}.{original}"
-                    else:
-                        name = sym_parts[0]
-                        alias_map[name] = f"{base_module}.{name}"
-            continue
+            for symbol in symbols:
+                sym_parts = symbol.strip().split()
+                if not sym_parts:
+                    continue
+                if 'as' in sym_parts:
+                    idx = sym_parts.index('as')
+                    original = sym_parts[idx - 1]
+                    alias = sym_parts[idx + 1]
+                    alias_map[alias] = f"{base_module}.{original}"
+                else:
+                    name = sym_parts[0]
+                    alias_map[name] = f"{base_module}.{name}"
+
 
         new_lines.append(line)
 

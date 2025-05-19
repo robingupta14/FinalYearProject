@@ -366,40 +366,29 @@ def pretty_print_node(node, code_bytes, indent=0):
         pretty_print_node(child, code_bytes, indent + 1)
 
 def preprocess_csharp(code):
-    print("a")
     importless_code = remove_using(code)
     commentless_code = remove_comments(importless_code)
     
-    print("b")
     documentationless_code = remove_docstrings(commentless_code)
     cleaned_code = remove_exception_and_print_text(documentationless_code)
     folded_code = fold_constants(cleaned_code)
     
-    print("c")
     tree = parser.parse(folded_code)
-    print("caa")
     rename_map = label_code(folded_code, tree)
-    print("cab")
-    print("ca")
     #print(rename_map)
     #pretty_print_node(tree.root_node, folded_code)
     labeled_code = replace_identifiers(folded_code, rename_map, tree)
-    print("cb")
     labeled_tree = parser.parse(labeled_code)
-    print("cc")
     
-    print("d")
     rename_map = {}
     declared_ids = set()
     collect_declared_identifiers(labeled_tree.root_node, labeled_code, declared_ids)
     
-    print("e")
     #print(declared_ids)
     rename_identifiers(labeled_tree.root_node, labeled_code, declared_ids, rename_map)
 
     #print(rename_map)
     
-    print("f")
     obfuscated_code = replace_identifiers(labeled_code, rename_map, labeled_tree)
 
     return obfuscated_code.decode('utf-8')
