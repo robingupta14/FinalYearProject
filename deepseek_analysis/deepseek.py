@@ -5,17 +5,18 @@ import torch
 import os
 from datasets import Dataset
 import random
-from sklearn.metrics import precision_recall_fscore_support, accuracy_score, confusion_matrix
+from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 from tqdm import tqdm
 import torch.nn.functional as F
 from torch.cuda.amp import autocast
 from accelerate import Accelerator
 import torch.nn as nn
 import sys
-import os
 from transformers import Qwen2ForCausalLM
 from transformers.modeling_outputs import SequenceClassifierOutput
 from torch.utils.data import DataLoader
+
+from itertools import product
 
 # CLASS DEFS
 class CausalLMWithClassifier(nn.Module):
@@ -157,10 +158,14 @@ accelerator = Accelerator()
 model = model.to(accelerator.device)
 
 # FINETUNING
-best_f1 = 0.0
-for cwe_id in ALLOWED_CWE_IDS:
-    print(f"\n--- Processing for {cwe_id} ---")
-    model_dir = f"./models/vulberta_{cwe_id}"
+batch_sizes = [1, 2, 4]
+epochs_list = [2, 3]
+learning_rates = [2e-5, 5e-5]
+weight_decays = [0.01, 0.05]
+cwe_id = "CWE-22"
+
+def run_training(cwe_id, model_path, batch_size, epochs, lr, weight_decay, warmup_ratio=0.1):
+    model_dir = f"./models/vulberta_{cwe_id}_bs{batch_size}_ep{epochs}_lr{lr}_wd{weight_decay}"
     samples = collect_files_for_cwe(cwe_id)
     random.seed(SEED)
     random.shuffle(samples)
@@ -174,36 +179,36 @@ for cwe_id in ALLOWED_CWE_IDS:
     )
     tokenized_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'label'])
     train_test = tokenized_dataset.train_test_split(test_size=0.2, seed=SEED)
-    train_loader = DataLoader(train_test["train"], batch_size=1, shuffle=True)
+    train_loader = DataLoader(train_test["train"], batch_size=batch_size, shuffle=True)
     eval_loader = DataLoader(train_test["test"], batch_size=1)
 
-    if os.path.isdir(model_dir) and os.path.exists(os.path.join(model_dir, "classifier.pt")):
-        print(f"Loading pre-trained model for {cwe_id} from {model_dir}")
-        model = CausalLMWithClassifier.from_pretrained(model_dir)
-    else:
-        print(f"Initializing new model for {cwe_id}")
-        base_model = Qwen2ForCausalLM.from_pretrained(
-            model_path,
-            torch_dtype=torch.float16,
-            device_map="auto",
-            trust_remote_code=True
-        )
-        model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2)
-    model = model.to(accelerator.device)
+    base_model = Qwen2ForCausalLM.from_pretrained(
+        model_path,
+        torch_dtype=torch.float16,
+        device_map="auto",
+        trust_remote_code=True
+    )
+    hidden_size = base_model.config.hidden_size
+    model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2).to(accelerator.device)
 
-    optimizer = AdamW(model.parameters(), lr=2e-5, weight_decay=0.01)
-    num_train_steps = len(train_loader) * EPOCHS
-    scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=int(0.1 * num_train_steps), num_training_steps=num_train_steps)
+    optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+    num_train_steps = len(train_loader) * epochs
+    scheduler = get_cosine_schedule_with_warmup(
+        optimizer,
+        num_warmup_steps=int(warmup_ratio * num_train_steps),
+        num_training_steps=num_train_steps
+    )
+
     for param in model.base_model.parameters():
         param.requires_grad = False
-
     for param in model.classifier.parameters():
         param.requires_grad = True
 
     model.train()
+    best_f1 = 0.0
 
-    for epoch in range(EPOCHS):
-        print(f"\nEpoch {epoch + 1}/{EPOCHS}")
+    for epoch in range(epochs):
+        print(f"\nEpoch {epoch + 1}/{epochs}")
         running_loss = 0.0
         for batch in tqdm(accelerator.prepare(train_loader)):
             optimizer.zero_grad()
@@ -221,7 +226,6 @@ for cwe_id in ALLOWED_CWE_IDS:
         model.eval()
         all_preds = []
         all_labels = []
-
         with torch.no_grad():
             for batch in tqdm(accelerator.prepare(eval_loader)):
                 batch = {k: v.to(accelerator.device) for k, v in batch.items()}
@@ -235,17 +239,28 @@ for cwe_id in ALLOWED_CWE_IDS:
         labels = torch.cat(all_labels)
         metrics = compute_metrics(preds, labels)
         f1_score = metrics["f1"]
-
-        print(f"\nMetrics after epoch {epoch + 1}:")
         print(metrics)
-        print("\nConfusion Matrix:")
-        print(confusion_matrix(labels.cpu(), (torch.sigmoid(preds) > 0.5).int().cpu()))
 
         if f1_score > best_f1:
-            print(f"New best F1 score: {f1_score:.4f}. Saving model for {cwe_id}...")
+            print(f"New best F1 score: {f1_score:.4f}. Saving model...")
             best_f1 = f1_score
             model.base_model.save_pretrained(model_dir)
             torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
 
-    print(f"\nFinished training for {cwe_id}")
+    print(f"Finished training for {cwe_id} with F1: {best_f1:.4f}")
+    return best_f1
+
+grid = product(batch_sizes, epochs_list, learning_rates, weight_decays)
+
+results = []
+for batch_size, epochs, lr, weight_decay in grid:
+    print(f"\n=== Running: BS={batch_size}, EP={epochs}, LR={lr}, WD={weight_decay} ===")
+    f1 = run_training(cwe_id, model_path, batch_size, epochs, lr, weight_decay)
+    results.append((batch_size, epochs, lr, weight_decay, f1))
+
+results.sort(key=lambda x: -x[-1])
+print("\nTop Configurations:")
+for config in results[:5]:
+    print(f"BS={config[0]}, EP={config[1]}, LR={config[2]}, WD={config[3]} → F1={config[4]:.4f}")
+
 tee.close()
