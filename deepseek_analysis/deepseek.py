@@ -8,13 +8,15 @@ import random
 from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 from tqdm import tqdm
 import torch.nn.functional as F
+from torch.cuda.amp import autocast
 from accelerate import Accelerator
 import torch.nn as nn
 import sys
 from transformers import Qwen2ForCausalLM
 from transformers.modeling_outputs import SequenceClassifierOutput
 from torch.utils.data import DataLoader
-import csv
+
+from itertools import product
 
 # CLASS DEFS
 class CausalLMWithClassifier(nn.Module):
@@ -156,118 +158,116 @@ accelerator = Accelerator()
 model = model.to(accelerator.device)
 
 # FINETUNING
-EPOCHS_LIST = [3, 5]
-LEARNING_RATES = [1e-5, 2e-5]
-WEIGHT_DECAYS = [0.01]
-BATCH_SIZES = [4, 8, 16]
-LAYERS_TO_UNFREEZE = [0, 1, 2, 4]
+batch_sizes = [1]
+layers = [0, 1, 2, 4]
+epochs_list = [3, 5]
+learning_rates = [1e-5, 2e-5]
+weight_decays = [0, 0.01, 0.05]
+cwe_id = "CWE-22"
 
-for cwe_id in ALLOWED_CWE_IDS:
-    print(f"\n--- Grid Search for {cwe_id} ---")
+def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, warmup_ratio=0.1):
+    model_dir = f"./models/vulberta_{cwe_id}_bs{batch_size}_ep{epochs}_lr{lr}_wd{weight_decay}"
     samples = collect_files_for_cwe(cwe_id)
     random.seed(SEED)
     random.shuffle(samples)
+
     raw_dataset = Dataset.from_list(samples)
-    tokenized_dataset = raw_dataset.map(lambda batch: tokenize_example(batch, cwe_id), batched=True, remove_columns=["filename", "code"])
+    tokenized_dataset = raw_dataset.map(
+        tokenize_example,
+        batched=True,
+        remove_columns=["filename", "code"],
+        fn_kwargs={"cwe_id": cwe_id}
+    )
     tokenized_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'label'])
     train_test = tokenized_dataset.train_test_split(test_size=0.2, seed=SEED)
-    train_dataset = train_test["train"]
-    eval_dataset = train_test["test"]
+    train_loader = DataLoader(train_test["train"], batch_size=batch_size, shuffle=True)
+    eval_loader = DataLoader(train_test["test"], batch_size=1)
 
-    log_path = f"./models/deepseek_{cwe_id}/gridsearch_results.csv"
-    os.makedirs(os.path.dirname(log_path), exist_ok=True)
-    with open(log_path, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["epochs", "lr", "weight_decay", "batch_size", "unfrozen_layers", "precision", "recall", "f1", "accuracy"])
+    base_model = Qwen2ForCausalLM.from_pretrained(
+        model_path,
+        torch_dtype=torch.float16,
+        device_map="auto",
+        trust_remote_code=True
+    )
+    hidden_size = base_model.config.hidden_size
+    model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2).to(accelerator.device)
 
-    best_f1 = -1
-    best_dir = None
+    optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+    num_train_steps = len(train_loader) * epochs
+    scheduler = get_cosine_schedule_with_warmup(
+        optimizer,
+        num_warmup_steps=int(warmup_ratio * num_train_steps),
+        num_training_steps=num_train_steps
+    )
 
-    for epochs in EPOCHS_LIST:
-        for lr in LEARNING_RATES:
-            for wd in WEIGHT_DECAYS:
-                for batch_size in BATCH_SIZES:
-                    for unfrozen in LAYERS_TO_UNFREEZE:
-                        print(f"\nRunning with epochs={epochs}, lr={lr}, wd={wd}, batch_size={batch_size}, unfrozen_layers={unfrozen}")
-
-                        base_model = Qwen2ForCausalLM.from_pretrained(
-                            model_path,
-                            torch_dtype=torch.float16,
-                            device_map="auto",
-                        )
-                        hidden_size = base_model.config.hidden_size
-                        model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2)
-
-                        for param in model.base_model.parameters():
-                            param.requires_grad = False
-
-                        if hasattr(model.base_model, 'transformer'):
-                            encoder_layers = model.base_model.transformer.h
-                            if isinstance(encoder_layers, torch.nn.ModuleList):
-                                for layer in encoder_layers[-unfrozen:]:
-                                    for param in layer.parameters():
+    for param in model.base_model.parameters():
+        param.requires_grad = False
+    if hasattr(model.base_model, 'transformer'):
+                        encoder_layers = model.base_model.transformer.h
+                        if isinstance(encoder_layers, torch.nn.ModuleList):
+                            for layer in encoder_layers[-layers:]:
+                                for param in layer.parameters():
                                         param.requires_grad = True
+    for param in model.classifier.parameters():
+        param.requires_grad = True
 
-                        for param in model.classifier.parameters():
-                            param.requires_grad = True
+    model.train()
+    best_f1 = 0.0
 
-                        optimizer = AdamW(model.parameters(), lr=lr, weight_decay=wd)
-                        num_train_steps = (len(train_dataset) // batch_size) * epochs
-                        warmup_steps = int(0.1 * num_train_steps)
-                        scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps, num_training_steps=num_train_steps)
+    for epoch in range(epochs):
+        print(f"\nEpoch {epoch + 1}/{epochs}")
+        running_loss = 0.0
+        for batch in tqdm(accelerator.prepare(train_loader)):
+            optimizer.zero_grad()
+            batch = {k: v.to(accelerator.device) for k, v in batch.items()}
+            with autocast():
+                if 'label' in batch:
+                    batch['labels'] = batch.pop('label')
+                outputs = model(**batch)
+            accelerator.backward(outputs.loss)
+            optimizer.step()
+            scheduler.step()
+            running_loss += outputs.loss.item()
+        print(f"Training Loss: {running_loss / len(train_loader):.4f}")
 
-                        accelerator = Accelerator()
-                        model, optimizer, train_dataset, eval_dataset = accelerator.prepare(model, optimizer, train_dataset, eval_dataset)
+        model.eval()
+        all_preds = []
+        all_labels = []
+        with torch.no_grad():
+            for batch in tqdm(accelerator.prepare(eval_loader)):
+                batch = {k: v.to(accelerator.device) for k, v in batch.items()}
+                if 'label' in batch:
+                    batch['labels'] = batch.pop('label')
+                outputs = model(**batch)
+                all_preds.append(outputs.logits.squeeze(-1))
+                all_labels.append(batch["labels"])
 
-                        output_dir = f"./models/deepseek_{cwe_id}/gridsearch/ep{epochs}_lr{lr}_wd{wd}_bs{batch_size}_uf{unfrozen}"
-                        os.makedirs(output_dir, exist_ok=True)
+        preds = torch.cat(all_preds)
+        labels = torch.cat(all_labels)
+        metrics = compute_metrics(preds, labels)
+        f1_score = metrics["f1"]
+        print(metrics)
 
-                        for epoch in range(epochs):
-                            model.train()
-                            train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-                            for batch in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}"):
-                                optimizer.zero_grad()
-                                with accelerator.autocast():
-                                    outputs = model(
-                                        input_ids=batch["input_ids"],
-                                        attention_mask=batch["attention_mask"],
-                                        labels=batch["label"]
-                                    )
-                                    loss = outputs.loss
-                                accelerator.backward(loss)
-                                optimizer.step()
-                                scheduler.step()
+        if f1_score > best_f1:
+            print(f"New best F1 score: {f1_score:.4f}. Saving model...")
+            best_f1 = f1_score
+            model.base_model.save_pretrained(model_dir)
+            torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
 
-                        model.eval()
-                        eval_loader = DataLoader(eval_dataset, batch_size=batch_size)
-                        all_preds = []
-                        all_labels = []
-                        with torch.no_grad():
-                            for batch in eval_loader:
-                                outputs = model(
-                                    input_ids=batch["input_ids"],
-                                    attention_mask=batch["attention_mask"]
-                                )
-                                all_preds.append(outputs.logits.squeeze(-1).detach())
-                                all_labels.append(batch["label"])
+    print(f"Finished training for {cwe_id} with F1: {best_f1:.4f}")
+    return best_f1
 
-                        preds = torch.cat(all_preds)
-                        labels = torch.cat(all_labels)
-                        metrics = compute_metrics(preds, labels)
+grid = product(batch_sizes, layers, epochs_list, learning_rates, weight_decays)
 
-                        with open(log_path, "a", newline="") as f:
-                            writer = csv.writer(f)
-                            writer.writerow([epochs, lr, wd, batch_size, unfrozen, metrics['precision'], metrics['recall'], metrics['f1'], metrics['accuracy']])
+results = []
+for batch_size, layers, epochs, lr, weight_decay in grid:
+    print(f"\n=== Running: BS={batch_size}, Layers={layers}, EP={epochs}, LR={lr}, WD={weight_decay} ===")
+    f1 = run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay)
+    results.append((batch_size, epochs, lr, layers,weight_decay, f1))
 
-                        if metrics['f1'] > best_f1:
-                            best_f1 = metrics['f1']
-                            best_dir = output_dir
-                            model_to_save = accelerator.unwrap_model(model)
-                            model_to_save.base_model.save_pretrained(best_dir + "/final")
-                            torch.save(model_to_save.classifier, best_dir + "/final/classifier.pt")
-
-    if best_dir is not None:
-        os.system(f"cp -r {best_dir}/final ./models/deepseek_{cwe_id}/best_model")
-        print(f"\nBest model for {cwe_id} saved from: {best_dir} with F1={best_f1:.4f}")
+results.sort(key=lambda x: -x[-1])
+print("\nTop Configurations:")
+for config in results[:5]:
+    print(f"BS={config[0]}, EP={config[1]}, LR={config[2]}, layers={config[3]}, WD={config[4]} -> F1={config[4]:.4f}")
 
 tee.close()
