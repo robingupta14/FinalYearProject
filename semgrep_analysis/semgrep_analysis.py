@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 DATASET_ROOT = "../../CrossVul"
 ALLOWED_CWE_IDS = {"CWE-22", "CWE-79", "CWE-89", "CWE-787"}
-LANGUAGES = ['c', 'cpp', 'cs', 'html', 'java', 'py', 'php']
+LANGUAGES = ['c', 'cpp', 'cs', 'java', 'py', 'php']
 OUTPUT_CSV = "semgrep_filtered_results.csv"
 BENCHMARK_CSV = "semgrep_benchmark_results.csv"
 CONF_MATRIX_CSV = "semgrep_confusion_matrix.csv"
