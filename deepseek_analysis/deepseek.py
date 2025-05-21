@@ -159,10 +159,10 @@ model = model.to(accelerator.device)
 
 # FINETUNING
 batch_sizes = [1]
-layers = [0, 1, 2, 4]
-epochs_list = [1, 2, 3]
-learning_rates = [1e-5, 2e-5]
-weight_decays = [0, 0.01, 0.05]
+layers = [4, 6, 8]
+epochs_list = [3, 5, 9]
+learning_rates = [1e-5]
+weight_decays = [0]
 GRADIENT_ACCUMULATION_STEPS = [2, 4, 8]
 cwe_id = "CWE-22"
 
