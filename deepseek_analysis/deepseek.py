@@ -160,13 +160,14 @@ model = model.to(accelerator.device)
 # FINETUNING
 batch_sizes = [1]
 layers = [0, 1, 2, 4]
-epochs_list = [3, 5]
+epochs_list = [1, 2, 3]
 learning_rates = [1e-5, 2e-5]
 weight_decays = [0, 0.01, 0.05]
+GRADIENT_ACCUMULATION_STEPS = [2, 4, 8]
 cwe_id = "CWE-22"
 
-def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, warmup_ratio=0.1):
-    model_dir = f"./models/vulberta_{cwe_id}_bs{batch_size}_ep{epochs}_lr{lr}_wd{weight_decay}"
+def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps, warmup_ratio=0.1):
+    model_dir = f"./models/vulberta_{cwe_id}_bs{batch_size}_ep{epochs}_lr{lr}_wd{weight_decay}_accum{grad_accumulation_steps}"
     samples = collect_files_for_cwe(cwe_id)
     random.seed(SEED)
     random.shuffle(samples)
@@ -193,7 +194,7 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_deca
     model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2).to(accelerator.device)
 
     optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
-    num_train_steps = len(train_loader) * epochs
+    num_train_steps = len(train_loader) * epochs // grad_accumulation_steps
     scheduler = get_cosine_schedule_with_warmup(
         optimizer,
         num_warmup_steps=int(warmup_ratio * num_train_steps),
@@ -203,11 +204,11 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_deca
     for param in model.base_model.parameters():
         param.requires_grad = False
     if hasattr(model.base_model, 'transformer'):
-                        encoder_layers = model.base_model.transformer.h
-                        if isinstance(encoder_layers, torch.nn.ModuleList):
-                            for layer in encoder_layers[-layers:]:
-                                for param in layer.parameters():
-                                        param.requires_grad = True
+        encoder_layers = model.base_model.transformer.h
+        if isinstance(encoder_layers, torch.nn.ModuleList):
+            for layer in encoder_layers[-layers:]:
+                for param in layer.parameters():
+                    param.requires_grad = True
     for param in model.classifier.parameters():
         param.requires_grad = True
 
@@ -217,17 +218,24 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_deca
     for epoch in range(epochs):
         print(f"\nEpoch {epoch + 1}/{epochs}")
         running_loss = 0.0
-        for batch in tqdm(accelerator.prepare(train_loader)):
-            optimizer.zero_grad()
+        optimizer.zero_grad()
+        for step, batch in enumerate(tqdm(accelerator.prepare(train_loader))):
             batch = {k: v.to(accelerator.device) for k, v in batch.items()}
             with autocast():
                 if 'label' in batch:
                     batch['labels'] = batch.pop('label')
                 outputs = model(**batch)
-            accelerator.backward(outputs.loss)
-            optimizer.step()
-            scheduler.step()
-            running_loss += outputs.loss.item()
+            
+            loss = outputs.loss / grad_accumulation_steps
+            accelerator.backward(loss)
+
+            if (step + 1) % grad_accumulation_steps == 0:
+                optimizer.step()
+                scheduler.step()
+                optimizer.zero_grad()
+
+            running_loss += loss.item()
+
         print(f"Training Loss: {running_loss / len(train_loader):.4f}")
 
         model.eval()
@@ -257,17 +265,17 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_deca
     print(f"Finished training for {cwe_id} with F1: {best_f1:.4f}")
     return best_f1
 
-grid = product(batch_sizes, layers, epochs_list, learning_rates, weight_decays)
+grid = product(batch_sizes, layers, epochs_list, learning_rates, weight_decays, GRADIENT_ACCUMULATION_STEPS)
 
 results = []
-for batch_size, layers, epochs, lr, weight_decay in grid:
-    print(f"\n=== Running: BS={batch_size}, Layers={layers}, EP={epochs}, LR={lr}, WD={weight_decay} ===")
-    f1 = run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay)
-    results.append((batch_size, epochs, lr, layers,weight_decay, f1))
+for batch_size, layers, epochs, lr, weight_decay, grad_accumulation_steps in grid:
+    print(f"\n=== Running: BS={batch_size}, Layers={layers}, EP={epochs}, LR={lr}, WD={weight_decay}, Grad Accum Steps={grad_accumulation_steps} ===")
+    f1 = run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps)
+    results.append((batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps, f1))
 
 results.sort(key=lambda x: -x[-1])
 print("\nTop Configurations:")
 for config in results[:5]:
-    print(f"BS={config[0]}, EP={config[1]}, LR={config[2]}, layers={config[3]}, WD={config[4]} -> F1={config[4]:.4f}")
+    print(f"BS={config[0]}, EP={config[1]}, LR={config[2]}, layers={config[3]}, WD={config[4]}, Grad Accum Steps={config[5]} -> F1={config[6]:.4f}")
 
 tee.close()
