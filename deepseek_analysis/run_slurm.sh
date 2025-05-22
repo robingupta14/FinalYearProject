@@ -6,4 +6,4 @@ export PATH=/vol/bitbucket/rg721/FinalYearProject/venv/bin/:$PATH
 source activate
 /usr/bin/nvidia-smi
 uptime
-python /vol/bitbucket/rg721/FinalYearProject/DeepSeek7B/deepseek.py
+python /vol/bitbucket/rg721/FinalYearProject/deepseek_analysis/deepseek.py
