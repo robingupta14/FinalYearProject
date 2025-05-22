@@ -138,7 +138,7 @@ tee = Tee(logfile_path)
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 DATASET_ROOT = "/vol/bitbucket/rg721/CrossVul"
 ALLOWED_CWE_IDS = {"CWE-22"} # "CWE-22", "CWE-89", "CWE-787"
-LANGUAGES = ['c', 'cpp', 'cs', 'html', 'java', 'py', 'php']
+LANGUAGES = ['c', 'cpp', 'cs', 'java', 'py', 'php']
 SEED = 42
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
@@ -158,7 +158,7 @@ model = model.to(accelerator.device)
 
 # FINETUNING
 batch_sizes = [1]
-layers = [8, 16, 32, -1]
+layers = [32, 48, 64, 128]
 epochs_list = [5]
 learning_rates = [1e-5]
 weight_decays = [0]
