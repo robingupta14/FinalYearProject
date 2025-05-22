@@ -158,11 +158,11 @@ model = model.to(accelerator.device)
 
 # FINETUNING
 batch_sizes = [1]
-layers = [2, 4, 8, 16]
-epochs_list = [9]
+layers = [4, 8, 16]
+epochs_list = [5]
 learning_rates = [1e-5]
 weight_decays = [0]
-GRADIENT_ACCUMULATION_STEPS = [8, 16, 32]
+GRADIENT_ACCUMULATION_STEPS = [8]
 cwe_id = "CWE-22"
 
 def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps, warmup_ratio=0.1):
