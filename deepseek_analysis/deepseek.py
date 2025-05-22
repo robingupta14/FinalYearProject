@@ -140,7 +140,6 @@ DATASET_ROOT = "/vol/bitbucket/rg721/CrossVul"
 ALLOWED_CWE_IDS = {"CWE-22"} # "CWE-22", "CWE-89", "CWE-787"
 LANGUAGES = ['c', 'cpp', 'cs', 'html', 'java', 'py', 'php']
 SEED = 42
-EPOCHS = 3
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
@@ -159,8 +158,8 @@ model = model.to(accelerator.device)
 
 # FINETUNING
 batch_sizes = [1]
-layers = [4, 6, 8]
-epochs_list = [3, 5, 9]
+layers = [8]
+epochs_list = [5]
 learning_rates = [1e-5]
 weight_decays = [0]
 GRADIENT_ACCUMULATION_STEPS = [2, 4, 8]
@@ -265,17 +264,82 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_deca
     print(f"Finished training for {cwe_id} with F1: {best_f1:.4f}")
     return best_f1
 
-grid = product(batch_sizes, layers, epochs_list, learning_rates, weight_decays, GRADIENT_ACCUMULATION_STEPS)
+# grid = product(batch_sizes, layers, epochs_list, learning_rates, weight_decays, GRADIENT_ACCUMULATION_STEPS)
 
-results = []
-for batch_size, layers, epochs, lr, weight_decay, grad_accumulation_steps in grid:
-    print(f"\n=== Running: BS={batch_size}, Layers={layers}, EP={epochs}, LR={lr}, WD={weight_decay}, Grad Accum Steps={grad_accumulation_steps} ===")
-    f1 = run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps)
-    results.append((batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps, f1))
+# results = []
+# for batch_size, layers, epochs, lr, weight_decay, grad_accumulation_steps in grid:
+#     print(f"\n=== Running: BS={batch_size}, Layers={layers}, EP={epochs}, LR={lr}, WD={weight_decay}, Grad Accum Steps={grad_accumulation_steps} ===")
+#     f1 = run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps)
+#     results.append((batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps, f1))
 
-results.sort(key=lambda x: -x[-1])
-print("\nTop Configurations:")
-for config in results[:5]:
-    print(f"BS={config[0]}, EP={config[1]}, LR={config[2]}, layers={config[3]}, WD={config[4]}, Grad Accum Steps={config[5]} -> F1={config[6]:.4f}")
+# results.sort(key=lambda x: -x[-1])
+# print("\nTop Configurations:")
+# for config in results[:5]:
+#     print(f"BS={config[0]}, EP={config[1]}, LR={config[2]}, layers={config[3]}, WD={config[4]}, Grad Accum Steps={config[5]} -> F1={config[6]:.4f}")
+
+
+from sklearn.metrics import confusion_matrix, classification_report
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def evaluate_model(model_dir, cwe_id="CWE-22"):
+    print(f"\nEvaluating {model_dir}...")
+    model = CausalLMWithClassifier.from_pretrained(model_dir)
+    model = model.to(accelerator.device)
+    model.eval()
+    samples = collect_files_for_cwe(cwe_id)
+    random.seed(SEED)
+    random.shuffle(samples)
+    raw_dataset = Dataset.from_list(samples)
+    tokenized_dataset = raw_dataset.map(
+        tokenize_example,
+        batched=True,
+        remove_columns=["filename", "code"],
+        fn_kwargs={"cwe_id": cwe_id}
+    )
+    tokenized_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'label'])
+    test_dataset = tokenized_dataset.train_test_split(test_size=0.2, seed=SEED)["test"]
+    test_loader = DataLoader(test_dataset, batch_size=1)
+
+    all_preds, all_labels = [], []
+    with torch.no_grad():
+        for batch in tqdm(accelerator.prepare(test_loader), desc="Evaluating"):
+            batch = {k: v.to(accelerator.device) for k, v in batch.items()}
+            if 'label' in batch:
+                batch['labels'] = batch.pop('label')
+            outputs = model(**batch)
+            all_preds.append(outputs.logits.squeeze(-1).cpu())
+            all_labels.append(batch["labels"].cpu())
+
+    preds = torch.cat(all_preds)
+    labels = torch.cat(all_labels)
+    preds_bin = (torch.sigmoid(preds) > 0.5).int()
+    labels = labels.int()
+
+    print(classification_report(labels, preds_bin, target_names=["good", "bad"], digits=4))
+    
+    cm = confusion_matrix(labels, preds_bin)
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=["good", "bad"], yticklabels=["good", "bad"])
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+    plt.title(f"Confusion Matrix for {os.path.basename(model_dir)}")
+    plt.tight_layout()
+    plt.savefig(f"{os.path.basename(model_dir)}_confusion_matrix.png")
+    plt.close()
+
+model_dirs = [
+    ",../runs/models/vulberta_CWE-22_bs1_ep5_lr1e-05_wd0_accum4",
+    "../runs/models/vulberta_CWE-22_bs1_ep9_lr1e-05_wd0_accum4",
+    "../runs/models/vulberta_CWE-22_bs1_ep3_lr1e-05_wd0_accum8",
+    "../runs/models/vulberta_CWE-22_bs1_ep3_lr1e-05_wd0_accum2",
+    "../runs/models/vulberta_CWE-22_bs1_ep5_lr1e-05_wd0_accum8",
+    "../runs/models/vulberta_CWE-22_bs1_ep5_lr1e-05_wd0_accum2",
+    "../runs/models/vulberta_CWE-22_bs1_ep9_lr1e-05_wd0_accum2",
+    "../runs/models/vulberta_CWE-22_bs1_ep9_lr1e-05_wd0_accum8",
+    "../runs/models/vulberta_CWE-22_bs1_ep3_lr1e-05_wd0_accum4",
+]
+
+for model_dir in model_dirs:
+    evaluate_model(model_dir, cwe_id="CWE-22")
 
 tee.close()
