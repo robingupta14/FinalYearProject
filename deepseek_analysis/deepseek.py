@@ -328,7 +328,7 @@ def evaluate_model(model_dir, cwe_id="CWE-22"):
     plt.close()
 
 model_dirs = [
-    ",../runs/models/vulberta_CWE-22_bs1_ep5_lr1e-05_wd0_accum4",
+    "../runs/models/vulberta_CWE-22_bs1_ep5_lr1e-05_wd0_accum4",
     "../runs/models/vulberta_CWE-22_bs1_ep9_lr1e-05_wd0_accum4",
     "../runs/models/vulberta_CWE-22_bs1_ep3_lr1e-05_wd0_accum8",
     "../runs/models/vulberta_CWE-22_bs1_ep3_lr1e-05_wd0_accum2",
