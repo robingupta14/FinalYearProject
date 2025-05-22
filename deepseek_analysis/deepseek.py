@@ -158,7 +158,7 @@ model = model.to(accelerator.device)
 
 # FINETUNING
 batch_sizes = [1]
-layers = [4, 8, 16]
+layers = [8, 16, 32, -1]
 epochs_list = [5]
 learning_rates = [1e-5]
 weight_decays = [0]
@@ -199,9 +199,9 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_deca
         num_warmup_steps=int(warmup_ratio * num_train_steps),
         num_training_steps=num_train_steps
     )
-
-    for param in model.base_model.parameters():
-        param.requires_grad = False
+    if layers != -1:
+        for param in model.base_model.parameters():
+            param.requires_grad = False
     if hasattr(model.base_model, 'transformer'):
         encoder_layers = model.base_model.transformer.h
         if isinstance(encoder_layers, torch.nn.ModuleList):
