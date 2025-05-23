@@ -158,7 +158,7 @@ model = model.to(accelerator.device)
 
 # FINETUNING
 batch_sizes = [1]
-layers = [32, 48, 64, 128]
+layers = [32, 48]
 epochs_list = [5]
 learning_rates = [1e-5]
 weight_decays = [0]
@@ -166,7 +166,7 @@ GRADIENT_ACCUMULATION_STEPS = [8]
 cwe_id = "CWE-22"
 
 def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps, warmup_ratio=0.1):
-    model_dir = f"./models/vulberta_{cwe_id}_bs{batch_size}_ep{epochs}_lr{lr}_wd{weight_decay}_accum{grad_accumulation_steps}"
+    model_dir = f"./models/vulberta_{cwe_id}_bs{batch_size}_ep{epochs}_lr{lr}_wd{weight_decay}_accum{grad_accumulation_steps}_layers{layers}"
     samples = collect_files_for_cwe(cwe_id)
     random.seed(SEED)
     random.shuffle(samples)
@@ -219,7 +219,7 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_deca
             for layer in encoder_layers[-layers:]:
                 for param in layer.parameters():
                     param.requires_grad = True
-                    
+
         if hasattr(model, "lm_head"):
             for param in model.lm_head.parameters():
                 param.requires_grad = True
