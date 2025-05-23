@@ -158,48 +158,19 @@ model = model.to(accelerator.device)
 
 # FINETUNING
 batch_sizes = [1]
-layers = [32, 48]
-epochs_list = [5]
+layers = [0]
+epochs_list = [3]
 learning_rates = [1e-5]
 weight_decays = [0]
 GRADIENT_ACCUMULATION_STEPS = [8]
 cwe_id = "CWE-22"
 
 def set_trainable_layers(model, layers: int):
-    def get_transformer(m):
-        for attr in ['transformer', 'model', 'base_model', 'backbone']:
-            candidate = getattr(m, attr, None)
-            if candidate and hasattr(candidate, 'h'):
-                return candidate
-        raise AttributeError("Could not find transformer with '.h' layers in model.")
-
-    transformer = get_transformer(model)
-
-    if layers == -1:
-        for param in model.parameters():
-            param.requires_grad = True
-        return
-    
     for param in model.parameters():
         param.requires_grad = False
-    if layers >= 24:
-        if hasattr(transformer, "wte"):
-            for param in transformer.wte.parameters():
-                param.requires_grad = True
-        if hasattr(transformer, "drop"):
-            for param in transformer.drop.parameters():
-                param.requires_grad = True
-    encoder_layers = getattr(transformer, "h", None)
-    if isinstance(encoder_layers, torch.nn.ModuleList):
-        for layer in encoder_layers[-layers:]:
-            for param in layer.parameters():
-                param.requires_grad = True
-    if hasattr(model, "lm_head"):
-        for param in model.lm_head.parameters():
-            param.requires_grad = True
-    elif hasattr(model, "classifier"):
-        for param in model.classifier.parameters():
-            param.requires_grad = True
+
+    for param in model.classifier.parameters():
+        param.requires_grad = True
 
 def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps, warmup_ratio=0.1):
     model_dir = f"./models/vulberta_{cwe_id}_bs{batch_size}_ep{epochs}_lr{lr}_wd{weight_decay}_accum{grad_accumulation_steps}_layers{layers}_ds{DATASET_ROOT.split("/")[-1]}"
@@ -355,12 +326,7 @@ for config in results[:5]:
 #     plt.tight_layout()
 #     plt.savefig(f"{os.path.basename(model_dir)}_confusion_matrix.png")
 #     plt.close()
-
-<<<<<<< Updated upstream
-# model_dirs = ["../runs/models/vulberta_CWE-22_bs1_ep5_lr1e-05_wd0_accum8_layers0"]
-=======
-model_dirs = ["/vol/bitbucket/rg721/FinalYearProject/runs/models/vulberta_CWE-22_bs1_ep5_lr1e-05_wd0_accum8_layers0"]
->>>>>>> Stashed changes
+# model_dirs = ["/vol/bitbucket/rg721/FinalYearProject/runs/models/vulberta_CWE-22_bs1_ep5_lr1e-05_wd0_accum8_layers0_{DATASET_ROOT.split("/")[-1]}"]
 
 # for model_dir in model_dirs:
 #     evaluate_model(model_dir, cwe_id="CWE-22")
