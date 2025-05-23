@@ -201,7 +201,6 @@ model = model.to(accelerator.device)
 #         for param in model.classifier.parameters():
 #             param.requires_grad = True
 
-
 # def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps, warmup_ratio=0.1):
 #     model_dir = f"./models/vulberta_{cwe_id}_bs{batch_size}_ep{epochs}_lr{lr}_wd{weight_decay}_accum{grad_accumulation_steps}_layers{layers}"
 #     samples = collect_files_for_cwe(cwe_id)
@@ -228,6 +227,7 @@ model = model.to(accelerator.device)
 #     )
 #     hidden_size = base_model.config.hidden_size
 #     model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2).to(accelerator.device)
+
 #     set_trainable_layers(model, layers)
 
 #     optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
