@@ -165,6 +165,43 @@ weight_decays = [0]
 GRADIENT_ACCUMULATION_STEPS = [8]
 cwe_id = "CWE-22"
 
+def set_trainable_layers(model, layers: int):
+    def get_transformer(m):
+        for attr in ['transformer', 'model', 'base_model', 'backbone']:
+            candidate = getattr(m, attr, None)
+            if candidate and hasattr(candidate, 'h'):
+                return candidate
+        raise AttributeError("Could not find transformer with '.h' layers in model.")
+
+    transformer = get_transformer(model)
+
+    if layers == -1:
+        for param in model.parameters():
+            param.requires_grad = True
+        return
+    
+    for param in model.parameters():
+        param.requires_grad = False
+    if layers >= 24:
+        if hasattr(transformer, "wte"):
+            for param in transformer.wte.parameters():
+                param.requires_grad = True
+        if hasattr(transformer, "drop"):
+            for param in transformer.drop.parameters():
+                param.requires_grad = True
+    encoder_layers = getattr(transformer, "h", None)
+    if isinstance(encoder_layers, torch.nn.ModuleList):
+        for layer in encoder_layers[-layers:]:
+            for param in layer.parameters():
+                param.requires_grad = True
+    if hasattr(model, "lm_head"):
+        for param in model.lm_head.parameters():
+            param.requires_grad = True
+    elif hasattr(model, "classifier"):
+        for param in model.classifier.parameters():
+            param.requires_grad = True
+
+
 def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps, warmup_ratio=0.1):
     model_dir = f"./models/vulberta_{cwe_id}_bs{batch_size}_ep{epochs}_lr{lr}_wd{weight_decay}_accum{grad_accumulation_steps}_layers{layers}"
     samples = collect_files_for_cwe(cwe_id)
@@ -191,6 +228,7 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_deca
     )
     hidden_size = base_model.config.hidden_size
     model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2).to(accelerator.device)
+    set_trainable_layers(model, layers)
 
     optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     num_train_steps = len(train_loader) * epochs // grad_accumulation_steps
@@ -200,32 +238,7 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_deca
         num_training_steps=num_train_steps
     )
 
-    if layers == -1:
-        for param in model.parameters():
-            param.requires_grad = True
-        return
-
-    else:
-        if layers >= 24:
-            if hasattr(model, "transformer") and hasattr(model.transformer, "wte"):
-                for param in model.transformer.wte.parameters():
-                    param.requires_grad = True
-            if hasattr(model.transformer, "drop"):
-                for param in model.transformer.drop.parameters():
-                    param.requires_grad = True
-
-        encoder_layers = getattr(model.transformer, "h", None)
-        if isinstance(encoder_layers, torch.nn.ModuleList):
-            for layer in encoder_layers[-layers:]:
-                for param in layer.parameters():
-                    param.requires_grad = True
-
-        if hasattr(model, "lm_head"):
-            for param in model.lm_head.parameters():
-                param.requires_grad = True
-        elif hasattr(model, "classifier"):
-            for param in model.classifier.parameters():
-                param.requires_grad = True
+   
 
     model.train()
     best_f1 = 0.0
