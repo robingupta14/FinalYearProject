@@ -1,0 +1,27 @@
+Fri May 23 18:43:45 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.120                Driver Version: 550.120        CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A40                     Off |   00000000:00:10.0 Off |                    0 |
+|  0%   26C    P8             21W /  300W |       1MiB /  46068MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+ 18:43:46 up 27 days, 18:03,  0 user,  load average: 0.08, 0.03, 0.01
+Using device: cuda
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/deepseek_analysis/deepseek.py", line 157, in <module>
+    tokenizer = AutoTokenizer.from_pretrained(model_path, model_max_length=16384, truncation_side="left")
+                ^^^^^^^^^^^^^
+NameError: name 'AutoTokenizer' is not defined

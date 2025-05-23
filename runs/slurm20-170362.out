@@ -1,0 +1,51 @@
+Fri May 23 16:48:22 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.120                Driver Version: 550.120        CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A40                     Off |   00000000:01:00.0 Off |                    0 |
+|  0%   29C    P8             21W /  300W |       1MiB /  46068MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+ 16:48:22 up 27 days, 16:07,  0 user,  load average: 0.20, 0.74, 0.88
+Using device: cuda
+
+Evaluating /vol/bitbucket/rg721/FinalYearProject/runs/models/vulberta_CWE-22_bs1_ep5_lr1e-05_wd0_accum8_layers0_dsRename...
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/utils/hub.py", line 402, in cached_file
+    resolved_file = hf_hub_download(
+                    ^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 106, in _inner_fn
+    validate_repo_id(arg_value)
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 154, in validate_repo_id
+    raise HFValidationError(
+huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/vol/bitbucket/rg721/FinalYearProject/runs/models/vulberta_CWE-22_bs1_ep5_lr1e-05_wd0_accum8_layers0_dsRename'. Use `repo_type` argument if needed.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/deepseek_analysis/deepseek.py", line 332, in <module>
+    evaluate_model(model_dir, cwe_id="CWE-22")
+  File "/vol/bitbucket/rg721/FinalYearProject/deepseek_analysis/deepseek.py", line 287, in evaluate_model
+    model = CausalLMWithClassifier.from_pretrained(model_dir)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/deepseek_analysis/deepseek.py", line 55, in from_pretrained
+    base_model = AutoModelForCausalLM.from_pretrained(model_dir)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 485, in from_pretrained
+    resolved_config_file = cached_file(
+                           ^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/utils/hub.py", line 466, in cached_file
+    raise EnvironmentError(
+OSError: Incorrect path_or_model_id: '/vol/bitbucket/rg721/FinalYearProject/runs/models/vulberta_CWE-22_bs1_ep5_lr1e-05_wd0_accum8_layers0_dsRename'. Please provide either the path to a local folder or the repo_id of a model on the Hub.

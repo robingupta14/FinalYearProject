@@ -1,0 +1,37 @@
+Fri May 23 18:54:44 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.120                Driver Version: 550.120        CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A40                     Off |   00000000:01:00.0 Off |                    0 |
+|  0%   28C    P8             21W /  300W |       1MiB /  46068MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+ 18:54:44 up 27 days, 18:13,  0 user,  load average: 0.09, 0.58, 0.65
+Using device: cuda
+
+Evaluating /vol/bitbucket/rg721/FinalYearProject/runs/models/vulberta_CWE-22_bs1_ep3_lr1e-05_wd0_accum8_layers0_dsNoRename...
+320
+Map:   0%|          | 0/320 [00:00<?, ? examples/s]Map: 100%|##########| 320/320 [00:02<00:00, 141.54 examples/s]Map: 100%|##########| 320/320 [00:02<00:00, 138.16 examples/s]
+Evaluating:   0%|          | 0/64 [00:00<?, ?it/s]We detected that you are passing `past_key_values` as a tuple and this is deprecated and will be removed in v4.43. Please use an appropriate `Cache` class (https://huggingface.co/docs/transformers/v4.41.3/en/internal/generation_utils#transformers.Cache)
+Evaluating:   2%|1         | 1/64 [00:07<07:41,  7.32s/it]Evaluating:   3%|3         | 2/64 [00:13<06:51,  6.64s/it]Evaluating:   5%|4         | 3/64 [00:19<06:31,  6.43s/it]Evaluating:   6%|6         | 4/64 [00:25<06:20,  6.34s/it]Evaluating:   8%|7         | 5/64 [00:32<06:12,  6.31s/it]Evaluating:   9%|9         | 6/64 [00:38<06:04,  6.29s/it]Evaluating:  11%|#         | 7/64 [00:44<05:57,  6.28s/it]Evaluating:  12%|#2        | 8/64 [00:50<05:51,  6.27s/it]Evaluating:  14%|#4        | 9/64 [00:57<05:45,  6.27s/it]Evaluating:  16%|#5        | 10/64 [01:03<05:38,  6.27s/it]Evaluating:  17%|#7        | 11/64 [01:09<05:32,  6.28s/it]Evaluating:  19%|#8        | 12/64 [01:16<05:26,  6.28s/it]Evaluating:  20%|##        | 13/64 [01:22<05:20,  6.29s/it]Evaluating:  22%|##1       | 14/64 [01:28<05:14,  6.29s/it]Evaluating:  23%|##3       | 15/64 [01:34<05:08,  6.30s/it]Evaluating:  25%|##5       | 16/64 [01:41<05:02,  6.30s/it]Evaluating:  27%|##6       | 17/64 [01:47<04:56,  6.30s/it]Evaluating:  28%|##8       | 18/64 [01:53<04:50,  6.31s/it]Evaluating:  30%|##9       | 19/64 [02:00<04:43,  6.31s/it]Evaluating:  31%|###1      | 20/64 [02:06<04:37,  6.31s/it]Evaluating:  33%|###2      | 21/64 [02:12<04:31,  6.32s/it]Evaluating:  34%|###4      | 22/64 [02:19<04:25,  6.32s/it]Evaluating:  36%|###5      | 23/64 [02:25<04:19,  6.32s/it]Evaluating:  38%|###7      | 24/64 [02:31<04:12,  6.32s/it]Evaluating:  39%|###9      | 25/64 [02:38<04:06,  6.33s/it]Evaluating:  41%|####      | 26/64 [02:44<04:00,  6.33s/it]Evaluating:  42%|####2     | 27/64 [02:50<03:54,  6.33s/it]Evaluating:  44%|####3     | 28/64 [02:57<03:47,  6.33s/it]Evaluating:  45%|####5     | 29/64 [03:03<03:41,  6.33s/it]Evaluating:  47%|####6     | 30/64 [03:09<03:35,  6.33s/it]Evaluating:  48%|####8     | 31/64 [03:16<03:28,  6.33s/it]Evaluating:  50%|#####     | 32/64 [03:22<03:22,  6.33s/it]Evaluating:  52%|#####1    | 33/64 [03:28<03:16,  6.33s/it]Evaluating:  53%|#####3    | 34/64 [03:35<03:09,  6.33s/it]Evaluating:  55%|#####4    | 35/64 [03:41<03:03,  6.33s/it]Evaluating:  56%|#####6    | 36/64 [03:47<02:57,  6.33s/it]Evaluating:  58%|#####7    | 37/64 [03:54<02:50,  6.33s/it]Evaluating:  59%|#####9    | 38/64 [04:00<02:44,  6.33s/it]Evaluating:  61%|######    | 39/64 [04:06<02:38,  6.33s/it]Evaluating:  62%|######2   | 40/64 [04:13<02:31,  6.33s/it]Evaluating:  64%|######4   | 41/64 [04:19<02:25,  6.33s/it]Evaluating:  66%|######5   | 42/64 [04:25<02:19,  6.33s/it]Evaluating:  67%|######7   | 43/64 [04:32<02:13,  6.33s/it]Evaluating:  69%|######8   | 44/64 [04:38<02:06,  6.33s/it]Evaluating:  70%|#######   | 45/64 [04:44<02:00,  6.33s/it]Evaluating:  72%|#######1  | 46/64 [04:51<01:53,  6.33s/it]Evaluating:  73%|#######3  | 47/64 [04:57<01:47,  6.33s/it]Evaluating:  75%|#######5  | 48/64 [05:03<01:41,  6.33s/it]Evaluating:  77%|#######6  | 49/64 [05:10<01:34,  6.33s/it]Evaluating:  78%|#######8  | 50/64 [05:16<01:28,  6.33s/it]Evaluating:  80%|#######9  | 51/64 [05:22<01:22,  6.33s/it]Evaluating:  81%|########1 | 52/64 [05:29<01:15,  6.33s/it]Evaluating:  83%|########2 | 53/64 [05:35<01:09,  6.33s/it]Evaluating:  84%|########4 | 54/64 [05:41<01:03,  6.33s/it]Evaluating:  86%|########5 | 55/64 [05:48<00:56,  6.33s/it]Evaluating:  88%|########7 | 56/64 [05:54<00:50,  6.32s/it]Evaluating:  89%|########9 | 57/64 [06:00<00:44,  6.33s/it]Evaluating:  91%|######### | 58/64 [06:07<00:37,  6.33s/it]Evaluating:  92%|#########2| 59/64 [06:13<00:31,  6.33s/it]Evaluating:  94%|#########3| 60/64 [06:19<00:25,  6.33s/it]Evaluating:  95%|#########5| 61/64 [06:26<00:18,  6.33s/it]Evaluating:  97%|#########6| 62/64 [06:32<00:12,  6.33s/it]Evaluating:  98%|#########8| 63/64 [06:38<00:06,  6.33s/it]Evaluating: 100%|##########| 64/64 [06:45<00:00,  6.33s/it]Evaluating: 100%|##########| 64/64 [06:45<00:00,  6.33s/it]
+              precision    recall  f1-score   support
+
+        good     0.6522    0.4412    0.5263        34
+         bad     0.5366    0.7333    0.6197        30
+
+    accuracy                         0.5781        64
+   macro avg     0.5944    0.5873    0.5730        64
+weighted avg     0.5980    0.5781    0.5701        64
+
