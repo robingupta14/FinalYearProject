@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM, get_cosine_schedule_with_warmup
+#from transformers import AutoTokenizer, AutoModelForCausalLM, get_cosine_schedule_with_warmup
 from torch.optim import AdamW
 from tqdm import tqdm
 import torch
@@ -323,8 +323,7 @@ def evaluate_model(model_dir, cwe_id="CWE-22"):
     plt.tight_layout()
     plt.savefig(f"{os.path.basename(model_dir)}_confusion_matrix.png")
     plt.close()
-model_dirs = [f"/vol/bitbucket/rg721/FinalYearProject/runs/models/vulberta_CWE-22_bs1_ep5_lr1e-05_wd0_accum8_layers0_ds{DATASET_ROOT.split("/")[-1]}"]
-
+model_dirs = [f"/vol/bitbucket/rg721/FinalYearProject/runs/models/vulberta_CWE-22_bs1_ep3_lr1e-05_wd0_accum8_layers0_dsNoRename}"]
 for model_dir in model_dirs:
     evaluate_model(model_dir, cwe_id="CWE-22")
 
