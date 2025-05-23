@@ -138,8 +138,8 @@ def compute_metrics(preds, labels):
 logfile_path = "./training_log.txt"
 tee = Tee(logfile_path)
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
-DATASET_ROOT = "/vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename"
-ALLOWED_CWE_IDS = {"CWE-22"} # "CWE-22", "CWE-89", "CWE-787"
+DATASET_ROOT = "/vol/bitbucket/rg721/CrossVul"
+ALLOWED_CWE_IDS = {"CWE-78"} # "CWE-22", "CWE-89", "CWE-787"
 LANGUAGES = ['c', 'cpp', 'cs', 'java', 'py', 'php']
 SEED = 42
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

@@ -1,0 +1,25 @@
+Fri May 23 19:11:27 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.120                Driver Version: 550.120        CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A40                     Off |   00000000:01:00.0 Off |                    0 |
+|  0%   26C    P8             20W /  300W |       1MiB /  46068MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+ 19:11:27 up 27 days, 18:30,  0 user,  load average: 0.03, 0.25, 0.59
+  File "/vol/bitbucket/rg721/FinalYearProject/deepseek_analysis/deepseek.py", line 326
+    model_dirs = [f"/vol/bitbucket/rg721/FinalYearProject/runs/models/vulberta_CWE-22_bs1_ep3_lr1e-05_wd0_accum8_layers0_dsNoRename}"]
+                                                                                                                                   ^
+SyntaxError: f-string: single '}' is not allowed
