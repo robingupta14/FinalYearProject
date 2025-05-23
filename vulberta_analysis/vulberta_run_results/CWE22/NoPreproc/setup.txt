@@ -1,0 +1,1 @@
+Running with epochs=2, lr=2e-05, wd=0.01, batch_size=8, ch_thresh=0.45, unfrozen_layers=4 - no preproc
