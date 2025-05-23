@@ -157,168 +157,56 @@ accelerator = Accelerator()
 model = model.to(accelerator.device)
 
 # FINETUNING
-# batch_sizes = [1]
-# layers = [32, 48]
-# epochs_list = [5]
-# learning_rates = [1e-5]
-# weight_decays = [0]
-# GRADIENT_ACCUMULATION_STEPS = [8]
-# cwe_id = "CWE-22"
+batch_sizes = [1]
+layers = [32, 48]
+epochs_list = [5]
+learning_rates = [1e-5]
+weight_decays = [0]
+GRADIENT_ACCUMULATION_STEPS = [8]
+cwe_id = "CWE-22"
 
-# def set_trainable_layers(model, layers: int):
-#     def get_transformer(m):
-#         for attr in ['transformer', 'model', 'base_model', 'backbone']:
-#             candidate = getattr(m, attr, None)
-#             if candidate and hasattr(candidate, 'h'):
-#                 return candidate
-#         raise AttributeError("Could not find transformer with '.h' layers in model.")
+def set_trainable_layers(model, layers: int):
+    def get_transformer(m):
+        for attr in ['transformer', 'model', 'base_model', 'backbone']:
+            candidate = getattr(m, attr, None)
+            if candidate and hasattr(candidate, 'h'):
+                return candidate
+        raise AttributeError("Could not find transformer with '.h' layers in model.")
 
-#     transformer = get_transformer(model)
+    transformer = get_transformer(model)
 
-#     if layers == -1:
-#         for param in model.parameters():
-#             param.requires_grad = True
-#         return
+    if layers == -1:
+        for param in model.parameters():
+            param.requires_grad = True
+        return
     
-#     for param in model.parameters():
-#         param.requires_grad = False
-#     if layers >= 24:
-#         if hasattr(transformer, "wte"):
-#             for param in transformer.wte.parameters():
-#                 param.requires_grad = True
-#         if hasattr(transformer, "drop"):
-#             for param in transformer.drop.parameters():
-#                 param.requires_grad = True
-#     encoder_layers = getattr(transformer, "h", None)
-#     if isinstance(encoder_layers, torch.nn.ModuleList):
-#         for layer in encoder_layers[-layers:]:
-#             for param in layer.parameters():
-#                 param.requires_grad = True
-#     if hasattr(model, "lm_head"):
-#         for param in model.lm_head.parameters():
-#             param.requires_grad = True
-#     elif hasattr(model, "classifier"):
-#         for param in model.classifier.parameters():
-#             param.requires_grad = True
+    for param in model.parameters():
+        param.requires_grad = False
+    if layers >= 24:
+        if hasattr(transformer, "wte"):
+            for param in transformer.wte.parameters():
+                param.requires_grad = True
+        if hasattr(transformer, "drop"):
+            for param in transformer.drop.parameters():
+                param.requires_grad = True
+    encoder_layers = getattr(transformer, "h", None)
+    if isinstance(encoder_layers, torch.nn.ModuleList):
+        for layer in encoder_layers[-layers:]:
+            for param in layer.parameters():
+                param.requires_grad = True
+    if hasattr(model, "lm_head"):
+        for param in model.lm_head.parameters():
+            param.requires_grad = True
+    elif hasattr(model, "classifier"):
+        for param in model.classifier.parameters():
+            param.requires_grad = True
 
-# def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps, warmup_ratio=0.1):
-#     model_dir = f"./models/vulberta_{cwe_id}_bs{batch_size}_ep{epochs}_lr{lr}_wd{weight_decay}_accum{grad_accumulation_steps}_layers{layers}"
-#     samples = collect_files_for_cwe(cwe_id)
-#     random.seed(SEED)
-#     random.shuffle(samples)
-
-#     raw_dataset = Dataset.from_list(samples)
-#     tokenized_dataset = raw_dataset.map(
-#         tokenize_example,
-#         batched=True,
-#         remove_columns=["filename", "code"],
-#         fn_kwargs={"cwe_id": cwe_id}
-#     )
-#     tokenized_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'label'])
-#     train_test = tokenized_dataset.train_test_split(test_size=0.2, seed=SEED)
-#     train_loader = DataLoader(train_test["train"], batch_size=batch_size, shuffle=True)
-#     eval_loader = DataLoader(train_test["test"], batch_size=1)
-
-#     base_model = Qwen2ForCausalLM.from_pretrained(
-#         model_path,
-#         torch_dtype=torch.float16,
-#         device_map="auto",
-#         trust_remote_code=True
-#     )
-#     hidden_size = base_model.config.hidden_size
-#     model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2).to(accelerator.device)
-
-#     set_trainable_layers(model, layers)
-
-#     optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
-#     num_train_steps = len(train_loader) * epochs // grad_accumulation_steps
-#     scheduler = get_cosine_schedule_with_warmup(
-#         optimizer,
-#         num_warmup_steps=int(warmup_ratio * num_train_steps),
-#         num_training_steps=num_train_steps
-#     )
-
-   
-
-#     model.train()
-#     best_f1 = 0.0
-
-#     for epoch in range(epochs):
-#         print(f"\nEpoch {epoch + 1}/{epochs}")
-#         running_loss = 0.0
-#         optimizer.zero_grad()
-#         for step, batch in enumerate(tqdm(accelerator.prepare(train_loader))):
-#             batch = {k: v.to(accelerator.device) for k, v in batch.items()}
-#             with autocast():
-#                 if 'label' in batch:
-#                     batch['labels'] = batch.pop('label')
-#                 outputs = model(**batch)
-            
-#             loss = outputs.loss / grad_accumulation_steps
-#             accelerator.backward(loss)
-
-#             if (step + 1) % grad_accumulation_steps == 0:
-#                 optimizer.step()
-#                 scheduler.step()
-#                 optimizer.zero_grad()
-
-#             running_loss += loss.item()
-
-#         print(f"Training Loss: {running_loss / len(train_loader):.4f}")
-
-#         model.eval()
-#         all_preds = []
-#         all_labels = []
-#         with torch.no_grad():
-#             for batch in tqdm(accelerator.prepare(eval_loader)):
-#                 batch = {k: v.to(accelerator.device) for k, v in batch.items()}
-#                 if 'label' in batch:
-#                     batch['labels'] = batch.pop('label')
-#                 outputs = model(**batch)
-#                 all_preds.append(outputs.logits.squeeze(-1))
-#                 all_labels.append(batch["labels"])
-
-#         preds = torch.cat(all_preds)
-#         labels = torch.cat(all_labels)
-#         metrics = compute_metrics(preds, labels)
-#         f1_score = metrics["f1"]
-#         print(metrics)
-
-#         if f1_score > best_f1:
-#             print(f"New best F1 score: {f1_score:.4f}. Saving model...")
-#             best_f1 = f1_score
-#             model.base_model.save_pretrained(model_dir)
-#             torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
-
-#     print(f"Finished training for {cwe_id} with F1: {best_f1:.4f}")
-#     return best_f1
-
-# grid = product(batch_sizes, layers, epochs_list, learning_rates, weight_decays, GRADIENT_ACCUMULATION_STEPS)
-
-# results = []
-# for batch_size, layers, epochs, lr, weight_decay, grad_accumulation_steps in grid:
-#     print(f"\n=== Running: BS={batch_size}, Layers={layers}, EP={epochs}, LR={lr}, WD={weight_decay}, Grad Accum Steps={grad_accumulation_steps} ===")
-#     f1 = run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps)
-#     results.append((batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps, f1))
-
-# results.sort(key=lambda x: -x[-1])
-# print("\nTop Configurations:")
-# for config in results[:5]:
-#     print(f"BS={config[0]}, EP={config[1]}, LR={config[2]}, layers={config[3]}, WD={config[4]}, Grad Accum Steps={config[5]} -> F1={config[6]:.4f}")
-
-
-from sklearn.metrics import confusion_matrix, classification_report
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-def evaluate_model(model_dir, cwe_id="CWE-22"):
-    print(f"\nEvaluating {model_dir}...")
-    model = CausalLMWithClassifier.from_pretrained(model_dir)
-    model = model.to(accelerator.device)
-    model.eval()
+def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps, warmup_ratio=0.1):
+    model_dir = f"./models/vulberta_{cwe_id}_bs{batch_size}_ep{epochs}_lr{lr}_wd{weight_decay}_accum{grad_accumulation_steps}_layers{layers}_ds{DATASET_ROOT.split("/")[-1]}"
     samples = collect_files_for_cwe(cwe_id)
     random.seed(SEED)
     random.shuffle(samples)
+
     raw_dataset = Dataset.from_list(samples)
     tokenized_dataset = raw_dataset.map(
         tokenize_example,
@@ -327,38 +215,150 @@ def evaluate_model(model_dir, cwe_id="CWE-22"):
         fn_kwargs={"cwe_id": cwe_id}
     )
     tokenized_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'label'])
-    test_dataset = tokenized_dataset.train_test_split(test_size=0.2, seed=SEED)["test"]
-    test_loader = DataLoader(test_dataset, batch_size=1)
+    train_test = tokenized_dataset.train_test_split(test_size=0.2, seed=SEED)
+    train_loader = DataLoader(train_test["train"], batch_size=batch_size, shuffle=True)
+    eval_loader = DataLoader(train_test["test"], batch_size=1)
 
-    all_preds, all_labels = [], []
-    with torch.no_grad():
-        for batch in tqdm(accelerator.prepare(test_loader), desc="Evaluating"):
+    base_model = Qwen2ForCausalLM.from_pretrained(
+        model_path,
+        torch_dtype=torch.float16,
+        device_map="auto",
+        trust_remote_code=True
+    )
+    hidden_size = base_model.config.hidden_size
+    model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2).to(accelerator.device)
+
+    set_trainable_layers(model, layers)
+
+    optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+    num_train_steps = len(train_loader) * epochs // grad_accumulation_steps
+    scheduler = get_cosine_schedule_with_warmup(
+        optimizer,
+        num_warmup_steps=int(warmup_ratio * num_train_steps),
+        num_training_steps=num_train_steps
+    )
+
+   
+
+    model.train()
+    best_f1 = 0.0
+
+    for epoch in range(epochs):
+        print(f"\nEpoch {epoch + 1}/{epochs}")
+        running_loss = 0.0
+        optimizer.zero_grad()
+        for step, batch in enumerate(tqdm(accelerator.prepare(train_loader))):
             batch = {k: v.to(accelerator.device) for k, v in batch.items()}
-            if 'label' in batch:
-                batch['labels'] = batch.pop('label')
-            outputs = model(**batch)
-            all_preds.append(outputs.logits.squeeze(-1).cpu())
-            all_labels.append(batch["labels"].cpu())
+            with autocast():
+                if 'label' in batch:
+                    batch['labels'] = batch.pop('label')
+                outputs = model(**batch)
+            
+            loss = outputs.loss / grad_accumulation_steps
+            accelerator.backward(loss)
 
-    preds = torch.cat(all_preds)
-    labels = torch.cat(all_labels)
-    preds_bin = (torch.sigmoid(preds) > 0.5).int()
-    labels = labels.int()
+            if (step + 1) % grad_accumulation_steps == 0:
+                optimizer.step()
+                scheduler.step()
+                optimizer.zero_grad()
 
-    print(classification_report(labels, preds_bin, target_names=["good", "bad"], digits=4))
+            running_loss += loss.item()
+
+        print(f"Training Loss: {running_loss / len(train_loader):.4f}")
+
+        model.eval()
+        all_preds = []
+        all_labels = []
+        with torch.no_grad():
+            for batch in tqdm(accelerator.prepare(eval_loader)):
+                batch = {k: v.to(accelerator.device) for k, v in batch.items()}
+                if 'label' in batch:
+                    batch['labels'] = batch.pop('label')
+                outputs = model(**batch)
+                all_preds.append(outputs.logits.squeeze(-1))
+                all_labels.append(batch["labels"])
+
+        preds = torch.cat(all_preds)
+        labels = torch.cat(all_labels)
+        metrics = compute_metrics(preds, labels)
+        f1_score = metrics["f1"]
+        print(metrics)
+
+        if f1_score > best_f1:
+            print(f"New best F1 score: {f1_score:.4f}. Saving model...")
+            best_f1 = f1_score
+            model.base_model.save_pretrained(model_dir)
+            torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
+
+    print(f"Finished training for {cwe_id} with F1: {best_f1:.4f}")
+    return best_f1
+
+grid = product(batch_sizes, layers, epochs_list, learning_rates, weight_decays, GRADIENT_ACCUMULATION_STEPS)
+
+results = []
+for batch_size, layers, epochs, lr, weight_decay, grad_accumulation_steps in grid:
+    print(f"\n=== Running: BS={batch_size}, Layers={layers}, EP={epochs}, LR={lr}, WD={weight_decay}, Grad Accum Steps={grad_accumulation_steps} ===")
+    f1 = run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps)
+    results.append((batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps, f1))
+
+results.sort(key=lambda x: -x[-1])
+print("\nTop Configurations:")
+for config in results[:5]:
+    print(f"BS={config[0]}, EP={config[1]}, LR={config[2]}, layers={config[3]}, WD={config[4]}, Grad Accum Steps={config[5]} -> F1={config[6]:.4f}")
+
+
+# from sklearn.metrics import confusion_matrix, classification_report
+# import matplotlib.pyplot as plt
+# import seaborn as sns
+
+# def evaluate_model(model_dir, cwe_id="CWE-22"):
+#     print(f"\nEvaluating {model_dir}...")
+#     model = CausalLMWithClassifier.from_pretrained(model_dir)
+#     model = model.to(accelerator.device)
+#     model.eval()
+#     samples = collect_files_for_cwe(cwe_id)
+#     random.seed(SEED)
+#     random.shuffle(samples)
+#     raw_dataset = Dataset.from_list(samples)
+#     tokenized_dataset = raw_dataset.map(
+#         tokenize_example,
+#         batched=True,
+#         remove_columns=["filename", "code"],
+#         fn_kwargs={"cwe_id": cwe_id}
+#     )
+#     tokenized_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'label'])
+#     test_dataset = tokenized_dataset.train_test_split(test_size=0.2, seed=SEED)["test"]
+#     test_loader = DataLoader(test_dataset, batch_size=1)
+
+#     all_preds, all_labels = [], []
+#     with torch.no_grad():
+#         for batch in tqdm(accelerator.prepare(test_loader), desc="Evaluating"):
+#             batch = {k: v.to(accelerator.device) for k, v in batch.items()}
+#             if 'label' in batch:
+#                 batch['labels'] = batch.pop('label')
+#             outputs = model(**batch)
+#             all_preds.append(outputs.logits.squeeze(-1).cpu())
+#             all_labels.append(batch["labels"].cpu())
+
+#     preds = torch.cat(all_preds)
+#     labels = torch.cat(all_labels)
+#     preds_bin = (torch.sigmoid(preds) > 0.5).int()
+#     labels = labels.int()
+
+#     print(classification_report(labels, preds_bin, target_names=["good", "bad"], digits=4))
     
-    cm = confusion_matrix(labels, preds_bin)
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=["good", "bad"], yticklabels=["good", "bad"])
-    plt.xlabel("Predicted")
-    plt.ylabel("Actual")
-    plt.title(f"Confusion Matrix for {os.path.basename(model_dir)}")
-    plt.tight_layout()
-    plt.savefig(f"{os.path.basename(model_dir)}_confusion_matrix.png")
-    plt.close()
+#     cm = confusion_matrix(labels, preds_bin)
+#     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=["good", "bad"], yticklabels=["good", "bad"])
+#     plt.xlabel("Predicted")
+#     plt.ylabel("Actual")
+#     plt.title(f"Confusion Matrix for {os.path.basename(model_dir)}")
+#     plt.tight_layout()
+#     plt.savefig(f"{os.path.basename(model_dir)}_confusion_matrix.png")
+#     plt.close()
 
-model_dirs = ["../runs/models/vulberta_CWE-22_bs1_ep5_lr1e-05_wd0_accum8_layers0"]
+# model_dirs = ["../runs/models/vulberta_CWE-22_bs1_ep5_lr1e-05_wd0_accum8_layers0"]
 
-for model_dir in model_dirs:
-    evaluate_model(model_dir, cwe_id="CWE-22")
+# for model_dir in model_dirs:
+#     evaluate_model(model_dir, cwe_id="CWE-22")
 
 tee.close()
