@@ -199,17 +199,33 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_deca
         num_warmup_steps=int(warmup_ratio * num_train_steps),
         num_training_steps=num_train_steps
     )
-    if layers != -1:
-        for param in model.base_model.parameters():
-            param.requires_grad = False
-    if hasattr(model.base_model, 'transformer'):
-        encoder_layers = model.base_model.transformer.h
+
+    if layers == -1:
+        for param in model.parameters():
+            param.requires_grad = True
+        return
+
+    else:
+        if layers >= 24:
+            if hasattr(model, "transformer") and hasattr(model.transformer, "wte"):
+                for param in model.transformer.wte.parameters():
+                    param.requires_grad = True
+            if hasattr(model.transformer, "drop"):
+                for param in model.transformer.drop.parameters():
+                    param.requires_grad = True
+
+        encoder_layers = getattr(model.transformer, "h", None)
         if isinstance(encoder_layers, torch.nn.ModuleList):
             for layer in encoder_layers[-layers:]:
                 for param in layer.parameters():
                     param.requires_grad = True
-    for param in model.classifier.parameters():
-        param.requires_grad = True
+                    
+        if hasattr(model, "lm_head"):
+            for param in model.lm_head.parameters():
+                param.requires_grad = True
+        elif hasattr(model, "classifier"):
+            for param in model.classifier.parameters():
+                param.requires_grad = True
 
     model.train()
     best_f1 = 0.0
