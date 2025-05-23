@@ -158,7 +158,7 @@ model = model.to(accelerator.device)
 
 # FINETUNING
 batch_sizes = [1]
-layers = [32, 48]
+layers = [32]
 epochs_list = [5]
 learning_rates = [1e-5]
 weight_decays = [0]
@@ -166,39 +166,32 @@ GRADIENT_ACCUMULATION_STEPS = [8]
 cwe_id = "CWE-22"
 
 def set_trainable_layers(model, layers: int):
-    def get_transformer(m):
-        for attr in ['transformer', 'model', 'base_model', 'backbone']:
-            candidate = getattr(m, attr, None)
-            if candidate and hasattr(candidate, 'h'):
-                return candidate
-        raise AttributeError("Could not find transformer with '.h' layers in model.")
-
-    transformer = get_transformer(model)
-
     if layers == -1:
         for param in model.parameters():
             param.requires_grad = True
         return
-    
+
     for param in model.parameters():
         param.requires_grad = False
-    if layers >= 24:
-        if hasattr(transformer, "wte"):
-            for param in transformer.wte.parameters():
+
+    if layers >= 14:  # model has 28 layers
+        if hasattr(model.base_model.model, "embed_tokens"):
+            for param in model.base_model.model.embed_tokens.parameters():
                 param.requires_grad = True
-        if hasattr(transformer, "drop"):
-            for param in transformer.drop.parameters():
-                param.requires_grad = True
-    encoder_layers = getattr(transformer, "h", None)
+
+    encoder_layers = getattr(model.base_model.model, "layers", None)
     if isinstance(encoder_layers, torch.nn.ModuleList):
         for layer in encoder_layers[-layers:]:
             for param in layer.parameters():
                 param.requires_grad = True
-    if hasattr(model, "lm_head"):
-        for param in model.lm_head.parameters():
-            param.requires_grad = True
-    elif hasattr(model, "classifier"):
+    else:
+        raise AttributeError("Could not find transformer layers in model.base_model.model.layers")
+
+    if hasattr(model, "classifier"):
         for param in model.classifier.parameters():
+            param.requires_grad = True
+    elif hasattr(model.base_model, "lm_head"):
+        for param in model.base_model.lm_head.parameters():
             param.requires_grad = True
 
 
@@ -228,6 +221,7 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_deca
     )
     hidden_size = base_model.config.hidden_size
     model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2).to(accelerator.device)
+
     set_trainable_layers(model, layers)
 
     optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
