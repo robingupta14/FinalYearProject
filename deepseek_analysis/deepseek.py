@@ -159,7 +159,7 @@ accelerator = Accelerator()
 model = model.to(accelerator.device)
 
 # FINETUNING
-# batch_sizes = [1]
+batch_sizes = [1]
 # layers = [0]
 # epochs_list = [3]
 # learning_rates = [1e-5]
@@ -323,7 +323,7 @@ def evaluate_model(model_dir, cwe_id="CWE-22"):
     plt.tight_layout()
     plt.savefig(f"{os.path.basename(model_dir)}_confusion_matrix.png")
     plt.close()
-model_dirs = [f"/vol/bitbucket/rg721/FinalYearProject/runs/models/vulberta_CWE-22_bs1_ep3_lr1e-05_wd0_accum8_layers0_dsNoRename"]
+model_dirs = [f"/vol/bitbucket/rg721/FinalYearProject/runs/models/vulberta_CWE-22_bs1_ep3_lr1e-05_wd0_accum8_layers0_dsNoRename}"]
 for model_dir in model_dirs:
     evaluate_model(model_dir, cwe_id="CWE-22")
 
