@@ -309,7 +309,7 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_deca
             torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
 
     print(f"Finished training for {cwe_id} with F1: {best_f1:.4f}")
-    evaluate_model(model_dir, cwe_id)
+    evaluate_model(model_dir, cwe_id, root)
     return best_f1
 
 grid = product(batch_sizes, layers, epochs_list, learning_rates, weight_decays, GRADIENT_ACCUMULATION_STEPS)
