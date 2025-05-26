@@ -1,0 +1,53 @@
+Fri May 23 20:03:48 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.120                Driver Version: 550.120        CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A40                     Off |   00000000:01:00.0 Off |                    0 |
+|  0%   27C    P8             20W /  300W |       1MiB /  46068MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+ 20:03:48 up 27 days, 19:22,  0 user,  load average: 0.07, 0.48, 0.77
+Using device: cuda
+
+=== Running: BS=1, Layers=0, EP=3, LR=1e-05, WD=0, Grad Accum Steps=8 ===
+0
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/deepseek_analysis/deepseek.py", line 319, in <module>
+    f1 = run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/deepseek_analysis/deepseek.py", line 229, in run_training
+    tokenized_dataset = raw_dataset.map(
+                        ^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/datasets/arrow_dataset.py", line 593, in wrapper
+    out: Union["Dataset", "DatasetDict"] = func(self, *args, **kwargs)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/datasets/arrow_dataset.py", line 558, in wrapper
+    out: Union["Dataset", "DatasetDict"] = func(self, *args, **kwargs)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/datasets/arrow_dataset.py", line 3002, in map
+    return self.remove_columns(remove_columns)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/datasets/arrow_dataset.py", line 593, in wrapper
+    out: Union["Dataset", "DatasetDict"] = func(self, *args, **kwargs)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/datasets/arrow_dataset.py", line 558, in wrapper
+    out: Union["Dataset", "DatasetDict"] = func(self, *args, **kwargs)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/datasets/fingerprint.py", line 482, in wrapper
+    out = func(dataset, *args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/datasets/arrow_dataset.py", line 2160, in remove_columns
+    raise ValueError(
+ValueError: Column name ['filename', 'code'] not in the dataset. Current columns in the dataset: []
