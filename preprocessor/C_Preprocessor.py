@@ -301,7 +301,7 @@ def preprocess_c(code):
 code = b"""
 # define VALUE 42
 // bury it i wont let
-/* you bury it i wont let you smother it i wont let you murder it our time is running out */
+/* you bury it */
 #include <stdlib.h>
 struct Hello {};
 
@@ -313,10 +313,11 @@ int x() {
     int x = (VALUE + VALUE) * VALUE;
     printf("%d", x);
     if (x > 0) {
-       int x = 19;
+       int x = 17*17+17*17-17/17+17+(17*(17-7));
        int y = x + x;
     }
 
     return x
 }
 """
+print(preprocess_c(code))
