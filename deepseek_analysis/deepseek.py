@@ -143,7 +143,7 @@ DATASET_ROOTS = ["/vol/bitbucket/rg721/FinalYearProject/Preprocessed/Rename", "/
 ALLOWED_CWE_IDS = {"CWE-89"} # "CWE-22", "CWE-89", "CWE-787"
 LANGUAGES = ['c', 'cpp', 'cs', 'java', 'py', 'php']
 SEED = 42
-cwe_id = "CWE-79"
+cwe_id = "CWE-89"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
