@@ -1,0 +1,7 @@
+file,label,cwe,classification
+../../CrossVul/CWE-79/c/bad_1838_3,bad,CWE-79,False Negative
+../../CrossVul/CWE-79/c/good_1838_3,good,CWE-79,True Negative
+../../CrossVul/CWE-79/c/bad_384_0,bad,CWE-79,False Negative
+../../CrossVul/CWE-79/c/bad_720_2,bad,CWE-79,False Negative
+../../CrossVul/CWE-79/c/good_720_2,good,CWE-79,True Negative
+../../CrossVul/CWE-79/c/good_384_0,good,CWE-79,True Negative

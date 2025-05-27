@@ -1,0 +1,11 @@
+file,label,cwe,classification
+../../CrossVul/CWE-79/cpp/bad_3200_4,bad,CWE-79,False Negative
+../../CrossVul/CWE-79/cpp/bad_3200_1,bad,CWE-79,False Negative
+../../CrossVul/CWE-79/cpp/good_3200_1,good,CWE-79,True Negative
+../../CrossVul/CWE-79/cpp/bad_3200_5,bad,CWE-79,False Negative
+../../CrossVul/CWE-79/cpp/good_2407_0,good,CWE-79,True Negative
+../../CrossVul/CWE-79/cpp/good_3200_0,good,CWE-79,True Negative
+../../CrossVul/CWE-79/cpp/bad_3200_0,bad,CWE-79,False Negative
+../../CrossVul/CWE-79/cpp/bad_2407_0,bad,CWE-79,False Negative
+../../CrossVul/CWE-79/cpp/good_3200_4,good,CWE-79,True Negative
+../../CrossVul/CWE-79/cpp/good_3200_5,good,CWE-79,True Negative
