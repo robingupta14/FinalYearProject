@@ -143,7 +143,7 @@ DATASET_ROOTS = ["/vol/bitbucket/rg721/FinalYearProject/Preprocessed/Rename", "/
 ALLOWED_CWE_IDS = {"CWE-89"} # "CWE-22", "CWE-89", "CWE-787"
 LANGUAGES = ['c', 'cpp', 'cs', 'java', 'py', 'php']
 SEED = 42
-cwe_id = "CWE-89"
+cwe_id = "CWE-787"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
@@ -223,93 +223,93 @@ def set_trainable_layers(model):
 def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps, root, warmup_ratio=0.1):
     model_dir = f"./models/vulberta_{cwe_id}_bs{batch_size}_ep{epochs}_lr{lr}_wd{weight_decay}_accum{grad_accumulation_steps}_layers{layers}_ds{root.split("/")[-1]}"
     best_f1 = 0
-    # samples = collect_files_for_cwe(cwe_id, root)
-    # random.seed(SEED)
-    # random.shuffle(samples)
+    samples = collect_files_for_cwe(cwe_id, root)
+    random.seed(SEED)
+    random.shuffle(samples)
 
-    # raw_dataset = Dataset.from_list(samples)
-    # tokenized_dataset = raw_dataset.map(
-    #     tokenize_example,
-    #     batched=True,
-    #     remove_columns=["filename", "code"],
-    #     fn_kwargs={"cwe_id": cwe_id}
-    # )
-    # tokenized_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'label'])
-    # train_test = tokenized_dataset.train_test_split(test_size=0.2, seed=SEED)
-    # train_loader = DataLoader(train_test["train"], batch_size=batch_size, shuffle=True)
-    # eval_loader = DataLoader(train_test["test"], batch_size=1)
+    raw_dataset = Dataset.from_list(samples)
+    tokenized_dataset = raw_dataset.map(
+        tokenize_example,
+        batched=True,
+        remove_columns=["filename", "code"],
+        fn_kwargs={"cwe_id": cwe_id}
+    )
+    tokenized_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'label'])
+    train_test = tokenized_dataset.train_test_split(test_size=0.2, seed=SEED)
+    train_loader = DataLoader(train_test["train"], batch_size=batch_size, shuffle=True)
+    eval_loader = DataLoader(train_test["test"], batch_size=1)
 
-    # base_model = Qwen2ForCausalLM.from_pretrained(
-    #     model_path,
-    #     torch_dtype=torch.float16,
-    #     device_map="auto",
-    #     trust_remote_code=True
-    # )
-    # hidden_size = base_model.config.hidden_size
-    # model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2).to(accelerator.device)
+    base_model = Qwen2ForCausalLM.from_pretrained(
+        model_path,
+        torch_dtype=torch.float16,
+        device_map="auto",
+        trust_remote_code=True
+    )
+    hidden_size = base_model.config.hidden_size
+    model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2).to(accelerator.device)
 
-    # set_trainable_layers(model)
+    set_trainable_layers(model)
 
-    # optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
-    # num_train_steps = len(train_loader) * epochs // grad_accumulation_steps
-    # scheduler = get_cosine_schedule_with_warmup(
-    #     optimizer,
-    #     num_warmup_steps=int(warmup_ratio * num_train_steps),
-    #     num_training_steps=num_train_steps
-    # )
+    optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+    num_train_steps = len(train_loader) * epochs // grad_accumulation_steps
+    scheduler = get_cosine_schedule_with_warmup(
+        optimizer,
+        num_warmup_steps=int(warmup_ratio * num_train_steps),
+        num_training_steps=num_train_steps
+    )
 
-    # model.train()
-    # best_f1 = 0.0
+    model.train()
+    best_f1 = 0.0
 
-    # for epoch in range(epochs):
-    #     print(f"\nEpoch {epoch + 1}/{epochs}")
-    #     running_loss = 0.0
-    #     optimizer.zero_grad()
-    #     for step, batch in enumerate(tqdm(accelerator.prepare(train_loader))):
-    #         batch = {k: v.to(accelerator.device) for k, v in batch.items()}
-    #         with autocast():
-    #             if 'label' in batch:
-    #                 batch['labels'] = batch.pop('label')
-    #             outputs = model(**batch)
+    for epoch in range(epochs):
+        print(f"\nEpoch {epoch + 1}/{epochs}")
+        running_loss = 0.0
+        optimizer.zero_grad()
+        for step, batch in enumerate(tqdm(accelerator.prepare(train_loader))):
+            batch = {k: v.to(accelerator.device) for k, v in batch.items()}
+            with autocast():
+                if 'label' in batch:
+                    batch['labels'] = batch.pop('label')
+                outputs = model(**batch)
             
-    #         loss = outputs.loss / grad_accumulation_steps
-    #         accelerator.backward(loss)
+            loss = outputs.loss / grad_accumulation_steps
+            accelerator.backward(loss)
 
-    #         if (step + 1) % grad_accumulation_steps == 0:
-    #             optimizer.step()
-    #             scheduler.step()
-    #             optimizer.zero_grad()
+            if (step + 1) % grad_accumulation_steps == 0:
+                optimizer.step()
+                scheduler.step()
+                optimizer.zero_grad()
 
-    #         running_loss += loss.item()
+            running_loss += loss.item()
 
-    #     print(f"Training Loss: {running_loss / len(train_loader):.4f}")
+        print(f"Training Loss: {running_loss / len(train_loader):.4f}")
 
-    #     model.eval()
-    #     all_preds = []
-    #     all_labels = []
-    #     with torch.no_grad():
-    #         for batch in tqdm(accelerator.prepare(eval_loader)):
-    #             batch = {k: v.to(accelerator.device) for k, v in batch.items()}
-    #             if 'label' in batch:
-    #                 batch['labels'] = batch.pop('label')
-    #             outputs = model(**batch)
-    #             all_preds.append(outputs.logits.squeeze(-1))
-    #             all_labels.append(batch["labels"])
+        model.eval()
+        all_preds = []
+        all_labels = []
+        with torch.no_grad():
+            for batch in tqdm(accelerator.prepare(eval_loader)):
+                batch = {k: v.to(accelerator.device) for k, v in batch.items()}
+                if 'label' in batch:
+                    batch['labels'] = batch.pop('label')
+                outputs = model(**batch)
+                all_preds.append(outputs.logits.squeeze(-1))
+                all_labels.append(batch["labels"])
 
-    #     preds = torch.cat(all_preds)
-    #     labels = torch.cat(all_labels)
-    #     metrics = compute_metrics(preds, labels)
-    #     f1_score = metrics["f1"]
-    #     print(metrics)
+        preds = torch.cat(all_preds)
+        labels = torch.cat(all_labels)
+        metrics = compute_metrics(preds, labels)
+        f1_score = metrics["f1"]
+        print(metrics)
 
-    #     if f1_score > best_f1:
-    #         print(f"New best F1 score: {f1_score:.4f}. Saving model...")
-    #         best_f1 = f1_score
-    #         model.base_model.save_pretrained(model_dir)
-    #         torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
+        if f1_score > best_f1:
+            print(f"New best F1 score: {f1_score:.4f}. Saving model...")
+            best_f1 = f1_score
+            model.base_model.save_pretrained(model_dir)
+            torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
 
-    # print(f"Finished training for {cwe_id} with F1: {best_f1:.4f}")
-    evaluate_model(model_dir, cwe_id, root)
+    print(f"Finished training for {cwe_id} with F1: {best_f1:.4f}")
+    # evaluate_model(model_dir, cwe_id, root)
     return best_f1
 
 grid = product(batch_sizes, layers, epochs_list, learning_rates, weight_decays, GRADIENT_ACCUMULATION_STEPS)
