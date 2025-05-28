@@ -8,7 +8,7 @@ from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 DATASET_ROOT = "../../CrossVul"
-ALLOWED_CWE_IDS = {"CWE-22", "CWE-79", "CWE-89", "CWE-787"}
+ALLOWED_CWE_IDS = {"CWE-787"} #"CWE-79", "CWE-89", "CWE-787"
 LANGUAGES = ['c', 'cpp', 'cs', 'java', 'py', 'php']
 OUTPUT_CSV = "semgrep_filtered_results.csv"
 BENCHMARK_CSV = "semgrep_benchmark_results.csv"
@@ -166,6 +166,53 @@ def scan_dataset():
 
     pd.DataFrame(per_cwe_metrics).to_csv(METRICS_CSV, index=False)
     print(f"[+] Per-CWE metrics saved to {METRICS_CSV}")
+    print("\n=== Per-Language Metrics ===")
+    per_lang_metrics = []
+    for lang in LANGUAGES:
+        lang_y_true, lang_y_pred = [], []
+        for row in benchmark_df.itertuples():
+            if f"/{lang}/" not in row.file:
+                continue
+            if row.label == "bad":
+                lang_y_true.append(1)
+                lang_y_pred.append(1 if row.classification == "True Positive" else 0)
+            else:
+                lang_y_true.append(0)
+                lang_y_pred.append(0 if row.classification == "True Negative" else 1)
+
+        if not lang_y_true:
+            continue
+
+        cm = confusion_matrix(lang_y_true, lang_y_pred)
+        precision = precision_score(lang_y_true, lang_y_pred, zero_division=0)
+        recall = recall_score(lang_y_true, lang_y_pred, zero_division=0)
+        f1 = f1_score(lang_y_true, lang_y_pred, zero_division=0)
+        accuracy = accuracy_score(lang_y_true, lang_y_pred)
+
+        tn, fp, fn, tp = cm.ravel()
+
+        print(f"\n[{lang}]")
+        print(pd.DataFrame(cm, index=["No CWE", "CWE"], columns=["Found no CWE", "Found CWE"]))
+        print(f"  Precision: {precision:.4f}")
+        print(f"  Recall:    {recall:.4f}")
+        print(f"  F1 Score:  {f1:.4f}")
+        print(f"  Accuracy:  {accuracy:.4f}")
+
+        per_lang_metrics.append({
+            "Language": lang,
+            "True Positives": tp,
+            "False Positives": fp,
+            "True Negatives": tn,
+            "False Negatives": fn,
+            "Precision": precision,
+            "Recall": recall,
+            "F1": f1,
+            "Accuracy": accuracy
+        })
+
+    lang_metrics_csv = "semgrep_per_language_metrics.csv"
+    pd.DataFrame(per_lang_metrics).to_csv(lang_metrics_csv, index=False)
+    print(f"[+] Per-language metrics and confusion matrices saved to {lang_metrics_csv}")
 
 if __name__ == "__main__":
     scan_dataset()
