@@ -143,7 +143,7 @@ DATASET_ROOTS = ["/vol/bitbucket/rg721/FinalYearProject/Preprocessed/Rename", "/
 ALLOWED_CWE_IDS = {"CWE-89"} # "CWE-22", "CWE-89", "CWE-787"
 LANGUAGES = ['c', 'cpp', 'cs', 'java', 'py', 'php']
 SEED = 42
-cwe_id = "CWE-787"
+cwe_id = "CWE-22"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
@@ -193,7 +193,7 @@ def test_untrained(cwe_id, root):
     tokenized_dataset = tokenized_dataset.rename_column("label", "labels")
     tokenized_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
-    test_dataset = tokenized_dataset  # ✅ Use full dataset
+    test_dataset = tokenized_dataset
     test_loader = DataLoader(test_dataset, batch_size=1)
 
     all_preds, all_labels = [], []
@@ -218,7 +218,7 @@ def test_untrained(cwe_id, root):
     plt.ylabel("Actual")
     plt.title(f"Confusion Matrix for {os.path.basename('base_res')}")
     plt.tight_layout()
-    plt.savefig(f"{os.path.basename('base_res')}_confusion_matrix.png")
+    plt.savefig(f"{os.path.basename('base_res')}_{cwe_id}_confusion_matrix.png")
     plt.close()
 
 def evaluate_model(model_dir, cwe_id, root):
