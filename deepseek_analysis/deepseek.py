@@ -22,9 +22,16 @@ from itertools import product
 
 # CLASS DEFS
 class CausalLMWithClassifier(nn.Module):
-    def __init__(self, base_model, hidden_size=2, classifier=None, num_labels=2):
+    def __init__(self, base_model, hidden_size=None, classifier=None, num_labels=2):
         super().__init__()
         self.base_model = base_model
+        
+        if hidden_size is None:
+            if hasattr(base_model, 'config') and hasattr(base_model.config, 'hidden_size'):
+                hidden_size = base_model.config.hidden_size
+            else:
+                raise ValueError("hidden_size not provided and cannot be inferred from base_model.config.hidden_size")
+
         if classifier is None:
             classifier = nn.Linear(hidden_size, 1)
         self.classifier = classifier
@@ -38,7 +45,7 @@ class CausalLMWithClassifier(nn.Module):
             input_ids=input_ids,
             attention_mask=attention_mask,
             output_hidden_states=True,
-            **base_model_kwargs # Use modified kwargs
+            **base_model_kwargs
         )
         hidden_states = outputs.hidden_states[-1]
         pooled_output = hidden_states[:, 0, :]
@@ -59,14 +66,27 @@ class CausalLMWithClassifier(nn.Module):
 
     @classmethod
     def from_pretrained(cls, model_dir):
-        base_model = AutoModelForCausalLM.from_pretrained(model_dir)
+        base_model = AutoModelForCausalLM.from_pretrained(model_dir, trust_remote_code=True) 
 
         classifier_path = os.path.join(model_dir, "classifier.pt")
         if not os.path.exists(classifier_path):
             raise FileNotFoundError(f"Classifier head not found at {classifier_path}")
-        classifier = torch.load(classifier_path)
+        classifier_module_or_statedict = torch.load(classifier_path)
 
-        return cls(base_model=base_model, classifier=classifier)
+        loaded_hidden_size = base_model.config.hidden_size
+    
+        if isinstance(classifier_module_or_statedict, nn.Linear):
+            classifier = classifier_module_or_statedict
+            if classifier.in_features != loaded_hidden_size:
+                print(f"Warning: Loaded classifier in_features ({classifier.in_features}) does not match base model hidden_size ({loaded_hidden_size}). Re-initializing classifier.")
+                classifier = nn.Linear(loaded_hidden_size, 1)
+        elif isinstance(classifier_module_or_statedict, dict):
+            classifier = nn.Linear(loaded_hidden_size, 1)
+            classifier.load_state_dict(classifier_module_or_statedict)
+        else:
+            raise TypeError("Loaded classifier is neither an nn.Linear module nor a state_dict.")
+
+        return cls(base_model=base_model, hidden_size=loaded_hidden_size, classifier=classifier)
 
 class Tee(object):
     def __init__(self, filename, mode="a"):
