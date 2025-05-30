@@ -1,0 +1,206 @@
+Fri May 30 14:07:10 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.120                Driver Version: 550.120        CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A40                     Off |   00000000:00:10.0 Off |                    0 |
+|  0%   28C    P8             21W /  300W |       1MiB /  46068MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+ 14:07:10 up 44 days,  3:17,  0 user,  load average: 0.32, 0.63, 0.36
+Using device: cuda
+
+=== Running: BS=1, Layers=0, EP=3, LR=1e-05, WD=0, Grad Accum Steps=4 ===
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+270
+Map:   0%|          | 0/270 [00:00<?, ? examples/s]Map: 100%|##########| 270/270 [00:03<00:00, 70.32 examples/s]Map: 100%|##########| 270/270 [00:03<00:00, 69.43 examples/s]
+Evaluating:   0%|          | 0/1 [00:00<?, ?it/s]We detected that you are passing `past_key_values` as a tuple and this is deprecated and will be removed in v4.43. Please use an appropriate `Cache` class (https://huggingface.co/docs/transformers/v4.41.3/en/internal/generation_utils#transformers.Cache)
+Evaluating: 100%|##########| 1/1 [00:02<00:00,  2.72s/it]Evaluating: 100%|##########| 1/1 [00:02<00:00,  2.72s/it]
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+              precision    recall  f1-score   support
+
+        good     0.0000    0.0000    0.0000       1.0
+         bad     0.0000    0.0000    0.0000       0.0
+
+    accuracy                         0.0000       1.0
+   macro avg     0.0000    0.0000    0.0000       1.0
+weighted avg     0.0000    0.0000    0.0000       1.0
+
+
+=== Running: BS=1, Layers=0, EP=3, LR=1e-05, WD=0, Grad Accum Steps=8 ===
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+270
+Map:   0%|          | 0/270 [00:00<?, ? examples/s]Map: 100%|##########| 270/270 [00:03<00:00, 73.68 examples/s]Map: 100%|##########| 270/270 [00:03<00:00, 72.78 examples/s]
+Evaluating:   0%|          | 0/1 [00:00<?, ?it/s]Evaluating: 100%|##########| 1/1 [00:01<00:00,  1.81s/it]Evaluating: 100%|##########| 1/1 [00:01<00:00,  1.81s/it]
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+              precision    recall  f1-score   support
+
+        good     0.0000    0.0000    0.0000       1.0
+         bad     0.0000    0.0000    0.0000       0.0
+
+    accuracy                         0.0000       1.0
+   macro avg     0.0000    0.0000    0.0000       1.0
+weighted avg     0.0000    0.0000    0.0000       1.0
+
+
+=== Running: BS=1, Layers=0, EP=3, LR=1e-05, WD=0.01, Grad Accum Steps=4 ===
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+270
+Map:   0%|          | 0/270 [00:00<?, ? examples/s]Map: 100%|##########| 270/270 [00:03<00:00, 78.07 examples/s]Map: 100%|##########| 270/270 [00:03<00:00, 77.02 examples/s]
+Evaluating:   0%|          | 0/1 [00:00<?, ?it/s]Evaluating: 100%|##########| 1/1 [00:01<00:00,  1.83s/it]Evaluating: 100%|##########| 1/1 [00:01<00:00,  1.83s/it]
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+              precision    recall  f1-score   support
+
+        good     0.0000    0.0000    0.0000       1.0
+         bad     0.0000    0.0000    0.0000       0.0
+
+    accuracy                         0.0000       1.0
+   macro avg     0.0000    0.0000    0.0000       1.0
+weighted avg     0.0000    0.0000    0.0000       1.0
+
+
+=== Running: BS=1, Layers=0, EP=3, LR=1e-05, WD=0.01, Grad Accum Steps=8 ===
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+270
+Map:   0%|          | 0/270 [00:00<?, ? examples/s]Map: 100%|##########| 270/270 [00:03<00:00, 70.35 examples/s]Map: 100%|##########| 270/270 [00:03<00:00, 69.52 examples/s]
+Evaluating:   0%|          | 0/1 [00:00<?, ?it/s]Evaluating: 100%|##########| 1/1 [00:01<00:00,  1.80s/it]Evaluating: 100%|##########| 1/1 [00:01<00:00,  1.80s/it]
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+              precision    recall  f1-score   support
+
+        good     0.0000    0.0000    0.0000       1.0
+         bad     0.0000    0.0000    0.0000       0.0
+
+    accuracy                         0.0000       1.0
+   macro avg     0.0000    0.0000    0.0000       1.0
+weighted avg     0.0000    0.0000    0.0000       1.0
+
+
+=== Running: BS=1, Layers=0, EP=5, LR=1e-05, WD=0, Grad Accum Steps=4 ===
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+270
+Map:   0%|          | 0/270 [00:00<?, ? examples/s]Map: 100%|##########| 270/270 [00:03<00:00, 76.69 examples/s]Map: 100%|##########| 270/270 [00:03<00:00, 75.73 examples/s]
+Evaluating:   0%|          | 0/1 [00:00<?, ?it/s]Evaluating: 100%|##########| 1/1 [00:01<00:00,  1.81s/it]Evaluating: 100%|##########| 1/1 [00:01<00:00,  1.81s/it]
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+              precision    recall  f1-score   support
+
+        good     0.0000    0.0000    0.0000       1.0
+         bad     0.0000    0.0000    0.0000       0.0
+
+    accuracy                         0.0000       1.0
+   macro avg     0.0000    0.0000    0.0000       1.0
+weighted avg     0.0000    0.0000    0.0000       1.0
+
+
+=== Running: BS=1, Layers=0, EP=5, LR=1e-05, WD=0, Grad Accum Steps=8 ===
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+270
+Map:   0%|          | 0/270 [00:00<?, ? examples/s]Map: 100%|##########| 270/270 [00:03<00:00, 68.41 examples/s]Map: 100%|##########| 270/270 [00:03<00:00, 67.59 examples/s]
+Evaluating:   0%|          | 0/1 [00:00<?, ?it/s]Evaluating: 100%|##########| 1/1 [00:01<00:00,  1.81s/it]Evaluating: 100%|##########| 1/1 [00:01<00:00,  1.81s/it]
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+              precision    recall  f1-score   support
+
+        good     0.0000    0.0000    0.0000       1.0
+         bad     0.0000    0.0000    0.0000       0.0
+
+    accuracy                         0.0000       1.0
+   macro avg     0.0000    0.0000    0.0000       1.0
+weighted avg     0.0000    0.0000    0.0000       1.0
+
+
+=== Running: BS=1, Layers=0, EP=5, LR=1e-05, WD=0.01, Grad Accum Steps=4 ===
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+270
+Map:   0%|          | 0/270 [00:00<?, ? examples/s]Map: 100%|##########| 270/270 [00:03<00:00, 75.51 examples/s]Map: 100%|##########| 270/270 [00:03<00:00, 74.52 examples/s]
+Evaluating:   0%|          | 0/1 [00:00<?, ?it/s]Evaluating: 100%|##########| 1/1 [00:01<00:00,  1.80s/it]Evaluating: 100%|##########| 1/1 [00:01<00:00,  1.80s/it]
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/deepseek_analysis/deepseek.py", line 382, in <module>
+    f1 = run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps, root)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/deepseek_analysis/deepseek.py", line 372, in run_training
+    test_untrained(cwe_id, root)
+  File "/vol/bitbucket/rg721/FinalYearProject/deepseek_analysis/deepseek.py", line 210, in test_untrained
+    print(classification_report(labels, preds_bin, target_names=["good", "bad"], digits=4))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/utils/_param_validation.py", line 213, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/sklearn/metrics/_classification.py", line 2626, in classification_report
+    raise ValueError(
+ValueError: Number of classes, 1, does not match size of target_names, 2. Try specifying the labels parameter
