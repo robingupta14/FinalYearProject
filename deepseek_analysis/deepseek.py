@@ -135,50 +135,46 @@ def compute_metrics(preds, labels):
     }
 
 # INITIALISATION
-logfile_path = "./training_log.txt"
+logfile_path = "./test_untrained_log.txt"
 tee = Tee(logfile_path)
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
-DATASET_ROOT = "/vol/bitbucket/rg721/CrossVul"
-DATASET_ROOTS = ["/vol/bitbucket/rg721/FinalYearProject/Preprocessed/Rename", "/vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename", "/vol/bitbucket/rg721/CrossVul"]
-ALLOWED_CWE_IDS = {"CWE-89"} # "CWE-22", "CWE-89", "CWE-787"
+DATASET_ROOTS = ["/vol/bitbucket/rg721/FinalYearProject/Preprocessed/Rename", 
+                 "/vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename", 
+                 "/vol/bitbucket/rg721/CrossVul"]
+TARGET_CWE_IDS = ["CWE-22", "CWE-79", "CWE-89", "CWE-787"]
 LANGUAGES = ['c', 'cpp', 'cs', 'java', 'py', 'php']
 SEED = 42
-cwe_id = "CWE-22"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
 model_path = "/vol/bitbucket/rg721/FinalYearProject/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
-base_model = Qwen2ForCausalLM.from_pretrained(
-    model_path,
-    torch_dtype=torch.float16,
-    device_map="auto",
-)
-hidden_size = base_model.config.hidden_size
-model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2)
+tokenizer = AutoTokenizer.from_pretrained(model_path, model_max_length=16384, truncation_side="left", trust_remote_code=True)
+if tokenizer.pad_token is None:
+    tokenizer.pad_token = tokenizer.eos_token
 
-tokenizer = AutoTokenizer.from_pretrained(model_path, model_max_length=16384, truncation_side="left")
+
 accelerator = Accelerator()
-model = model.to(accelerator.device)
-
-# FINETUNING
 batch_sizes = [1]
-layers = [0]
-epochs_list = [3, 5]
+epochs_list = [3]
 learning_rates = [1e-5]
-weight_decays = [0, 0.01]
-GRADIENT_ACCUMULATION_STEPS = [4, 8]
+weight_decays = [0.01]
+GRADIENT_ACCUMULATION_STEPS = [8]
 
 def test_untrained(cwe_id, root):
-    base_model = Qwen2ForCausalLM.from_pretrained(
+    print(f"\n--- Testing untrained model for CWE-{cwe_id} on dataset: {os.path.basename(root)} ---")
+    base_model_instance = Qwen2ForCausalLM.from_pretrained(
         model_path,
         torch_dtype=torch.float16,
-        device_map="auto",
         trust_remote_code=True
     )
-    hidden_size = base_model.config.hidden_size
-    model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2).to(accelerator.device)
+    model_instance = CausalLMWithClassifier(base_model_instance, num_labels=2)
+    model_instance = accelerator.prepare(model_instance)
 
     samples = collect_files_for_cwe(cwe_id, root)
+    if not samples:
+        print(f"No samples found for CWE-{cwe_id} in {root}. Skipping evaluation.")
+        return
+
     random.seed(SEED)
     random.shuffle(samples)
 
@@ -195,38 +191,76 @@ def test_untrained(cwe_id, root):
 
     test_dataset = tokenized_dataset
     test_loader = DataLoader(test_dataset, batch_size=1)
+    test_loader = accelerator.prepare(test_loader)
 
-    all_preds, all_labels = [], []
-
+    all_logits, all_labels = [], []
+    model_instance.eval()
     with torch.no_grad():
-        for batch in tqdm(accelerator.prepare(test_loader), desc="Evaluating"):
-            batch = {k: v.to(accelerator.device) for k, v in batch.items()}
-            outputs = model(**batch)
+        for batch in tqdm(test_loader, desc=f"Evaluating {cwe_id} on {os.path.basename(root)}"):
+            outputs = model_instance(**batch)
             logits = outputs.logits.view(-1)
-            all_preds.append(logits.cpu())
-            all_labels.append(batch["labels"].cpu())
+            all_logits.append(logits)
+            all_labels.append(batch["labels"])
 
-    preds = torch.cat(all_preds)
-    labels = torch.cat(all_labels)
-    preds_bin = (torch.sigmoid(preds) > 0.5).int()
+    if not all_logits:
+        print("No predictions made, possibly empty test_loader.")
+        return
 
-    print(classification_report(labels, preds_bin, target_names=["good", "bad"], labels=[0, 1], digits=4, zero_division=0))
+    logits_tensor = torch.cat(all_logits)
+    labels_tensor = torch.cat(all_labels)
+    logits_tensor_cpu = logits_tensor.cpu()
+    labels_tensor_cpu = labels_tensor.cpu()
 
-    cm = confusion_matrix(labels, preds_bin)
+    preds_probs = torch.sigmoid(logits_tensor_cpu)
+    preds_bin = (preds_probs > 0.5).int()
+    accuracy = accuracy_score(labels_tensor_cpu, preds_bin)
+    precision, recall, f1, _ = precision_recall_fscore_support(labels_tensor_cpu, preds_bin, average='binary', zero_division=0)
+
+    print(f"\nOverall Metrics for CWE-{cwe_id} on {os.path.basename(root)}:")
+    print(f"  Accuracy:  {accuracy:.4f}")
+    print(f"  Precision: {precision:.4f}")
+    print(f"  Recall:    {recall:.4f}")
+    print(f"  F1 Score:  {f1:.4f}")
+
+    print("\nClassification Report:")
+    print(classification_report(labels_tensor_cpu, preds_bin, target_names=["good", "bad"], labels=[0, 1], digits=4, zero_division=0))
+    cm = confusion_matrix(labels_tensor_cpu, preds_bin, labels=[0,1])
+    print("\nConfusion Matrix (numeric):")
+    print(cm)
+
+    plt.figure(figsize=(6,5))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=["good", "bad"], yticklabels=["good", "bad"])
     plt.xlabel("Predicted")
     plt.ylabel("Actual")
-    plt.title(f"Confusion Matrix for {os.path.basename('base_res')}")
+    plot_title = f"Untrained CM: {cwe_id} on {os.path.basename(root)}"
+    plt.title(plot_title)
     plt.tight_layout()
-    plt.savefig(f"{os.path.basename('base_res')}_{cwe_id}_confusion_matrix.png")
+    cm_filename = f"untrained_{cwe_id}_{os.path.basename(root)}_confusion_matrix.png"
+    plt.savefig(cm_filename)
+    print(f"Confusion matrix saved to {cm_filename}")
     plt.close()
+    
+    del model_instance
+    del base_model_instance
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
 
 def evaluate_model(model_dir, cwe_id, root):
     print(f"\nEvaluating {model_dir}...")
+    global tokenizer
+    if tokenizer is None:
+        tokenizer = AutoTokenizer.from_pretrained(model_path, model_max_length=16384, truncation_side="left", trust_remote_code=True)
+        if tokenizer.pad_token is None: tokenizer.pad_token = tokenizer.eos_token
+
     model = CausalLMWithClassifier.from_pretrained(model_dir)
-    model = model.to(accelerator.device)
+    model = accelerator.prepare(model)
     model.eval()
     samples = collect_files_for_cwe(cwe_id, root)
+    if not samples:
+        print(f"No samples found for {cwe_id} in {root} for evaluation of {model_dir}")
+        return
+        
     random.seed(SEED)
     random.shuffle(samples)
     raw_dataset = Dataset.from_list(samples)
@@ -237,39 +271,53 @@ def evaluate_model(model_dir, cwe_id, root):
         fn_kwargs={"cwe_id": cwe_id}
     )
     tokenized_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'label'])
-    test_dataset = tokenized_dataset.train_test_split(test_size=0.2, seed=SEED)["test"]
+    test_dataset = tokenized_dataset.train_test_split(test_size=0.2, seed=SEED)["test"] 
     test_loader = DataLoader(test_dataset, batch_size=1)
+    test_loader = accelerator.prepare(test_loader)
 
-    all_preds, all_labels = [], []
+    all_preds_logits, all_labels_list = [], []
     with torch.no_grad():
-        for batch in tqdm(accelerator.prepare(test_loader), desc="Evaluating"):
-            batch = {k: v.to(accelerator.device) for k, v in batch.items()}
+        for batch in tqdm(test_loader, desc=f"Evaluating {os.path.basename(model_dir)}"):
             if 'label' in batch:
                 batch['labels'] = batch.pop('label')
             outputs = model(**batch)
-            all_preds.append(outputs.logits.squeeze(-1).cpu())
-            all_labels.append(batch["labels"].cpu())
+            all_preds_logits.append(outputs.logits.squeeze(-1))
+            all_labels_list.append(batch["labels"])
 
-    preds = torch.cat(all_preds)
-    labels = torch.cat(all_labels)
-    preds_bin = (torch.sigmoid(preds) > 0.5).int()
-    labels = labels.int()
+    if not all_preds_logits:
+        print(f"No predictions made for {model_dir}.")
+        return
 
-    print(classification_report(labels, preds_bin, target_names=["good", "bad"], digits=4))
+    preds_logits_cat = torch.cat(all_preds_logits).cpu()
+    labels_cat = torch.cat(all_labels_list).cpu().int()
+
+    preds_bin_cat = (torch.sigmoid(preds_logits_cat) > 0.5).int()
+
+    print(f"\nClassification Report for {os.path.basename(model_dir)} on {cwe_id} ({os.path.basename(root)}):")
+    print(classification_report(labels_cat, preds_bin_cat, target_names=["good", "bad"], digits=4, zero_division=0))
     
-    cm = confusion_matrix(labels, preds_bin)
+    cm = confusion_matrix(labels_cat, preds_bin_cat, labels=[0,1])
+    print("\nConfusion Matrix (numeric):")
+    print(cm)
+    
+    plt.figure(figsize=(6,5))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=["good", "bad"], yticklabels=["good", "bad"])
     plt.xlabel("Predicted")
     plt.ylabel("Actual")
-    plt.title(f"Confusion Matrix for {os.path.basename(model_dir)}")
+    plt.title(f"CM for {os.path.basename(model_dir)} - {cwe_id} on {os.path.basename(root)}")
     plt.tight_layout()
-    plt.savefig(f"{os.path.basename(model_dir)}_confusion_matrix.png")
+    cm_eval_filename = f"{os.path.basename(model_dir)}_{cwe_id}_{os.path.basename(root)}_eval_confusion_matrix.png"
+    plt.savefig(cm_eval_filename)
+    print(f"Evaluation confusion matrix saved to {cm_eval_filename}")
     plt.close()
+
+    del model
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
 def set_trainable_layers(model):
     for param in model.parameters():
         param.requires_grad = False
-
     for param in model.classifier.parameters():
         param.requires_grad = True
 
@@ -366,18 +414,41 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_deca
     test_untrained(cwe_id, root)
     return best_f1
 
-grid = product(batch_sizes, layers, epochs_list, learning_rates, weight_decays, GRADIENT_ACCUMULATION_STEPS)
+skip_combinations = [
+    ("CWE-22", "CrossVul"),
+    ("CWE-79", "CrossVul"),
+    ("CWE-79", "NoRename"), 
+    ("CWE-89", "CrossVul"),
+    ("CWE-787", "CrossVul")
+]
 
-results = []
+print("\nStarting batch testing of untrained models...")
 
-for root in DATASET_ROOTS:
-    for batch_size, layers, epochs, lr, weight_decay, grad_accumulation_steps in grid:
-        print(f"\n=== Running: BS={batch_size}, Layers={layers}, EP={epochs}, LR={lr}, WD={weight_decay}, Grad Accum Steps={grad_accumulation_steps} ===")
-        f1 = run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps, root)
-        results.append((batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps, f1))
+for cwe_id_to_test in TARGET_CWE_IDS:
+    for dataset_root_path in DATASET_ROOTS:
+        current_dataset_basename = os.path.basename(dataset_root_path)
+        
+        if (cwe_id_to_test, current_dataset_basename) in skip_combinations:
+            print(f"\nSKIPPING: CWE {cwe_id_to_test} on dataset {current_dataset_basename} (path: {dataset_root_path}) as per provided list.")
+            continue
+        test_untrained(cwe_id=cwe_id_to_test, root=dataset_root_path)
 
-results.sort(key=lambda x: -x[-1])
-print("\nTop Configurations:")
-for config in results[:5]:
-    print(f"BS={config[0]}, EP={config[1]}, LR={config[2]}, layers={config[3]}, WD={config[4]}, Grad Accum Steps={config[5]} -> F1={config[6]:.4f}")
+print("\nFinished batch testing of untrained models.")
+
+# grid = product(batch_sizes, layers, epochs_list, learning_rates, weight_decays, GRADIENT_ACCUMULATION_STEPS)
+# results = []
+# for cwe_id_loop_var in TARGET_CWE_IDS: # Example: if you wanted to loop CWEs in grid
+#   for root_loop_var in DATASET_ROOTS:
+#     for batch_size_p, layers_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p in grid:
+#       # Check skips if necessary for training runs too
+#       print(f"\n=== Potentially Running Training: CWE={cwe_id_loop_var}, Root={os.path.basename(root_loop_var)}, BS={batch_size_p}, EP={epochs_p}, LR={lr_p} ===")
+#       # f1 = run_training(cwe_id_loop_var, model_path, batch_size_p, epochs_p, lr_p, layers_p, weight_decay_p, grad_accumulation_steps_p, root_loop_var)
+#       # results.append((cwe_id_loop_var, os.path.basename(root_loop_var), batch_size_p, epochs_p, lr_p, layers_p, weight_decay_p, grad_accumulation_steps_p, f1))
+
+# results.sort(key=lambda x: -x[-1]) # Sort by F1 score
+# print("\nTop Configurations (if training was run):")
+# for config in results[:5]:
+#   print(f"CWE={config[0]}, Dataset={config[1]}, BS={config[2]}, EP={config[3]}, LR={config[4]}, Layers={config[5]}, WD={config[6]}, GradAccum={config[7]} -> F1={config[8]:.4f}")
+
 tee.close()
+print("Log saved to ./test_untrained_log.txt")
