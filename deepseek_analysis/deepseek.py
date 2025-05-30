@@ -260,7 +260,7 @@ def evaluate_model(model_dir, cwe_id, root):
     preds_bin = (torch.sigmoid(preds) > 0.5).int()
     labels = labels.int()
 
-    print(classification_report(labels, preds_bin, target_names=["good", "bad"], digits=4))
+    print(classification_report(labels, preds_bin, target_names=["good", "bad"], labels=[0, 1], digits=4, zero_division=0))
 
     cm = confusion_matrix(labels, preds_bin)
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=["good", "bad"], yticklabels=["good", "bad"])
