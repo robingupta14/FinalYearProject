@@ -30,16 +30,21 @@ class CausalLMWithClassifier(nn.Module):
         self.classifier = classifier
 
     def forward(self, input_ids=None, attention_mask=None, labels=None, **kwargs):
+        base_model_kwargs = kwargs.copy()
+        if 'use_cache' not in base_model_kwargs:
+            base_model_kwargs['use_cache'] = False
+
         outputs = self.base_model(
             input_ids=input_ids,
             attention_mask=attention_mask,
             output_hidden_states=True,
-            **kwargs
+            **base_model_kwargs # Use modified kwargs
         )
         hidden_states = outputs.hidden_states[-1]
         pooled_output = hidden_states[:, 0, :]
-        pooled_output = pooled_output.to(dtype=self.classifier.weight.dtype) 
-        logits = self.classifier(pooled_output).squeeze(-1)
+        
+        input_for_classifier = pooled_output.to(dtype=self.classifier.weight.dtype)
+        logits = self.classifier(input_for_classifier).squeeze(-1)
 
         loss = None
         if labels is not None:
@@ -47,7 +52,7 @@ class CausalLMWithClassifier(nn.Module):
 
         return SequenceClassifierOutput(
             loss=loss,
-            logits=logits.unsqueeze(-1),
+            logits=logits.unsqueeze(-1) if logits.ndim == 1 else logits,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions if hasattr(outputs, "attentions") else None,
         )
@@ -162,19 +167,24 @@ GRADIENT_ACCUMULATION_STEPS = [8]
 
 def test_untrained(cwe_id, root):
     print(f"\n--- Testing untrained model for CWE-{cwe_id} on dataset: {os.path.basename(root)} ---")
-    base_model_instance = Qwen2ForCausalLM.from_pretrained(
+
+    base_model_instance = AutoModelForCausalLM.from_pretrained(
         model_path,
         torch_dtype=torch.float16,
         trust_remote_code=True
     )
+    
     model_instance = CausalLMWithClassifier(base_model_instance, num_labels=2)
     model_instance = accelerator.prepare(model_instance)
 
     samples = collect_files_for_cwe(cwe_id, root)
     if not samples:
         print(f"No samples found for CWE-{cwe_id} in {root}. Skipping evaluation.")
+        del model_instance
+        del base_model_instance
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
         return
-
     random.seed(SEED)
     random.shuffle(samples)
 
