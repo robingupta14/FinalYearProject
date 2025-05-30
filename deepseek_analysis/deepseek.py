@@ -252,6 +252,16 @@ def test_untrained(cwe_id, root):
     print(f"  Recall:    {recall:.4f}")
     print(f"  F1 Score:  {f1:.4f}")
 
+    macro_precision, macro_recall, macro_f1, _ = precision_recall_fscore_support(
+        labels_tensor_cpu, preds_bin, average='macro', zero_division=0
+    )
+
+    print(f"\nOverall Metrics (Macro Average) for CWE-{cwe_id} on {os.path.basename(root)}:")
+    print(f"  Accuracy:         {accuracy:.4f}")
+    print(f"  Macro Precision:  {macro_precision:.4f}")
+    print(f"  Macro Recall:     {macro_recall:.4f}")
+    print(f"  Macro F1 Score:   {macro_f1:.4f}")
+
     print("\nClassification Report:")
     print(classification_report(labels_tensor_cpu, preds_bin, target_names=["good", "bad"], labels=[0, 1], digits=4, zero_division=0))
     cm = confusion_matrix(labels_tensor_cpu, preds_bin, labels=[0,1])
