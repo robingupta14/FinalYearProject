@@ -218,16 +218,18 @@ def test_untrained(cwe_id, root):
     plt.savefig(f"{os.path.basename("../base_res")}_confusion_matrix.png")
     plt.close()
 
-
-
 def evaluate_model(model_dir, cwe_id, root):
     print(f"\nEvaluating {model_dir}...")
     model = CausalLMWithClassifier.from_pretrained(model_dir)
     model = model.to(accelerator.device)
     model.eval()
+
     samples = collect_files_for_cwe(cwe_id, root)
+
+    # Optional: remove shuffling if not needed
     random.seed(SEED)
     random.shuffle(samples)
+
     raw_dataset = Dataset.from_list(samples)
     tokenized_dataset = raw_dataset.map(
         tokenize_example,
@@ -235,18 +237,22 @@ def evaluate_model(model_dir, cwe_id, root):
         remove_columns=["filename", "code"],
         fn_kwargs={"cwe_id": cwe_id}
     )
-    tokenized_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'label'])
-    test_dataset = tokenized_dataset.train_test_split(test_size=0.2, seed=SEED)["test"]
+
+    tokenized_dataset = tokenized_dataset.rename_column("label", "labels")
+    tokenized_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
+
+    # ✅ Evaluate on the full dataset
+    test_dataset = tokenized_dataset
     test_loader = DataLoader(test_dataset, batch_size=1)
 
     all_preds, all_labels = [], []
+
     with torch.no_grad():
         for batch in tqdm(accelerator.prepare(test_loader), desc="Evaluating"):
             batch = {k: v.to(accelerator.device) for k, v in batch.items()}
-            if 'label' in batch:
-                batch['labels'] = batch.pop('label')
             outputs = model(**batch)
-            all_preds.append(outputs.logits.squeeze(-1).cpu())
+            logits = outputs.logits.view(-1)
+            all_preds.append(logits.cpu())
             all_labels.append(batch["labels"].cpu())
 
     preds = torch.cat(all_preds)
@@ -255,7 +261,7 @@ def evaluate_model(model_dir, cwe_id, root):
     labels = labels.int()
 
     print(classification_report(labels, preds_bin, target_names=["good", "bad"], digits=4))
-    
+
     cm = confusion_matrix(labels, preds_bin)
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=["good", "bad"], yticklabels=["good", "bad"])
     plt.xlabel("Predicted")
@@ -264,6 +270,7 @@ def evaluate_model(model_dir, cwe_id, root):
     plt.tight_layout()
     plt.savefig(f"{os.path.basename(model_dir)}_confusion_matrix.png")
     plt.close()
+
 
 def set_trainable_layers(model):
     for param in model.parameters():
@@ -355,7 +362,7 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_deca
     #     print(metrics)
 
     #     if f1_score > best_f1:
-    #         print(f"New best F1 score: {f1_score:.4f}. Saving model...")
+    #         print(f"New best F1 score: {f1_score:.4f  }. Saving model...")
     #         best_f1 = f1_score
     #         model.base_model.save_pretrained(model_dir)
     #         torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
