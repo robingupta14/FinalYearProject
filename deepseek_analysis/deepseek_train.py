@@ -165,7 +165,7 @@ tee = Tee(logfile_path)
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 DATASET_ROOTS = ["/vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename", 
                  "/vol/bitbucket/rg721/CrossVul"]
-TARGET_CWE_IDS = ["CWE-79", "CWE-89", "CWE-787"]
+TARGET_CWE_IDS = ["CWE-787", "CWE-89", "CWE-79"]
 LANGUAGES = ['c', 'cpp', 'cs', 'java', 'py', 'php']
 SEED = 42
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -341,12 +341,12 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, weight_decay, grad_
         print(metrics)
 
         if f1_score > best_f1:
-            print(f"New best F1 score: {f1_score:.4f  }. Saving model...")
+            print(f"New best F1 score: {f1_score}. Saving model...")
             best_f1 = f1_score
             model.base_model.save_pretrained(model_dir)
             torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
 
-    print(f"Finished training for {cwe_id} with F1: {best_f1:.4f}")
+    print(f"Finished training for {cwe_id} with F1: {best_f1}")
     evaluate_model(model_dir, cwe_id, root)
     return best_f1
 
