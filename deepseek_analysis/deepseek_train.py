@@ -180,7 +180,7 @@ accelerator = Accelerator()
 batch_sizes = [1]
 epochs_list = [3]
 learning_rates = [1e-5]
-weight_decays = [0, 0.01]
+weight_decays = [0]
 GRADIENT_ACCUMULATION_STEPS = [8]
 
 def evaluate_model(model_dir, cwe_id, root):
@@ -347,7 +347,7 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, weight_decay, grad_
             torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
 
     print(f"Finished training for {cwe_id} with F1: {best_f1}")
-    evaluate_model(model_dir, cwe_id, root)
+#    evaluate_model(model_dir, cwe_id, root)
     return best_f1
 
 grid = product(batch_sizes, epochs_list, learning_rates, weight_decays, GRADIENT_ACCUMULATION_STEPS)
