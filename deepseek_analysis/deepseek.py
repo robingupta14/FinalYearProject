@@ -450,34 +450,72 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_deca
     #         torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
 
     # print(f"Finished training for {cwe_id} with F1: {best_f1:.4f}")
-    # evaluate_model(model_dir, cwe_id, root)
-    test_untrained(cwe_id, root)
+    evaluate_model(model_dir, cwe_id, root)
+    # test_untrained(cwe_id, root)
     return best_f1
 
-skip_combinations = [
-    ("CWE-22", "CrossVul"),
-    ("CWE-22", "NoRename"),
-    ("CWE-22", "Rename"),
-    ("CWE-79", "CrossVul"),
-    ("CWE-79", "NoRename"),
-    ("CWE-79", "Rename"), 
-    ("CWE-89", "CrossVul"),
-    ("CWE-89", "Rename"),
-    ("CWE-787", "CrossVul")
-]
+# skip_combinations = [
+#     ("CWE-22", "CrossVul"),
+#     ("CWE-22", "NoRename"),
+#     ("CWE-22", "Rename"),
+#     ("CWE-79", "CrossVul"),
+#     ("CWE-79", "NoRename"),
+#     ("CWE-79", "Rename"), 
+#     ("CWE-89", "CrossVul"),
+#     ("CWE-89", "Rename"),
+#     ("CWE-787", "CrossVul")
+# ]
 
-print("\nStarting batch testing of untrained models...")
+logfile_path = "./trained_models_evaluation_log.txt"
+# print("\nStarting batch testing of untrained models...")
 
-for cwe_id_to_test in TARGET_CWE_IDS:
-    for dataset_root_path in DATASET_ROOTS:
-        current_dataset_basename = os.path.basename(dataset_root_path)
+# for cwe_id_to_test in TARGET_CWE_IDS:
+#     for dataset_root_path in DATASET_ROOTS:
+#         current_dataset_basename = os.path.basename(dataset_root_path)
         
-        if (cwe_id_to_test, current_dataset_basename) in skip_combinations:
-            print(f"\nSKIPPING: CWE {cwe_id_to_test} on dataset {current_dataset_basename} (path: {dataset_root_path}) as per provided list.")
-            continue
-        test_untrained(cwe_id=cwe_id_to_test, root=dataset_root_path)
+#         if (cwe_id_to_test, current_dataset_basename) in skip_combinations:
+#             print(f"\nSKIPPING: CWE {cwe_id_to_test} on dataset {current_dataset_basename} (path: {dataset_root_path}) as per provided list.")
+#             continue
+#         test_untrained(cwe_id=cwe_id_to_test, root=dataset_root_path)
 
-print("\nFinished batch testing of untrained models.")
+# print("\nFinished batch testing of untrained models.")
+MODELS_TO_EVALUATE_DIR = "/vol/bitbucket/rg721/FinalYearProject/newruns/models"
+dataset_name_to_root_map = {os.path.basename(p): p for p in DATASET_ROOTS}
+
+if not os.path.exists(MODELS_TO_EVALUATE_DIR) or not os.listdir(MODELS_TO_EVALUATE_DIR):
+    print(f"Model directory {MODELS_TO_EVALUATE_DIR} is empty or does not exist. No models to evaluate.")
+else:
+    # List all items in the models directory
+    for model_dir_name in os.listdir(MODELS_TO_EVALUATE_DIR):
+        model_full_path = os.path.join(MODELS_TO_EVALUATE_DIR, model_dir_name)
+
+        if not os.path.isdir(model_full_path):
+            print(f"Skipping {model_dir_name}, not a directory.")
+            continue
+        
+        print(f"\nProcessing model directory: {model_dir_name}")
+        parts = model_dir_name.split('_')
+        parsed_cwe_id = parts[1]
+            
+        dataset_tag_from_name = parts[-1]
+        parsed_dataset_short_name = dataset_tag_from_name[2:]
+        if parsed_dataset_short_name not in dataset_name_to_root_map:
+            print(f"Skipping model '{model_dir_name}': Dataset short name '{parsed_dataset_short_name}' not found in DATASET_ROOTS mapping.")
+            print(f"Available dataset short names: {list(dataset_name_to_root_map.keys())}")
+            continue
+            
+        eval_dataset_root_path = dataset_name_to_root_map[parsed_dataset_short_name]
+
+        print(f"  Model: {model_dir_name}")
+        print(f"  Parsed CWE ID: {parsed_cwe_id}")
+        print(f"  Parsed Dataset Short Name: {parsed_dataset_short_name}")
+        print(f"  Evaluation Dataset Path: {eval_dataset_root_path}")
+        evaluate_model(model_dir=model_full_path, 
+                        cwe_id=parsed_cwe_id, 
+                        root=eval_dataset_root_path)
+        
+print("\n--- Finished Evaluation of Trained Models ---")
+
 
 # grid = product(batch_sizes, layers, epochs_list, learning_rates, weight_decays, GRADIENT_ACCUMULATION_STEPS)
 # results = []
