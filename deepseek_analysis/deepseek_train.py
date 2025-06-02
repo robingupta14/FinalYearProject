@@ -258,8 +258,8 @@ def set_trainable_layers(model):
     for param in model.classifier.parameters():
         param.requires_grad = True
 
-def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_decay, grad_accumulation_steps, root, warmup_ratio=0.1):
-    model_dir = f"./models/vulberta_{cwe_id}_bs{batch_size}_ep{epochs}_lr{lr}_wd{weight_decay}_accum{grad_accumulation_steps}_layers{layers}_ds{root.split("/")[-1]}"
+def run_training(cwe_id, model_path, batch_size, epochs, lr, weight_decay, grad_accumulation_steps, root, warmup_ratio=0.1):
+    model_dir = f"./models/vulberta_{cwe_id}_bs{batch_size}_ep{epochs}_lr{lr}_wd{weight_decay}_accum{grad_accumulation_steps}_ds{root.split("/")[-1]}"
     best_f1 = 0
     samples = collect_files_for_cwe(cwe_id, root)
     random.seed(SEED)
@@ -354,11 +354,11 @@ grid = product(batch_sizes, epochs_list, learning_rates, weight_decays, GRADIENT
 results = []
 for cwe_id_loop_var in TARGET_CWE_IDS:
   for root_loop_var in DATASET_ROOTS:
-    for batch_size_p, layers_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p in grid:
+    for batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p in grid:
       # Check skips if necessary for training runs too
       print(f"\n=== Potentially Running Training: CWE={cwe_id_loop_var}, Root={os.path.basename(root_loop_var)}, BS={batch_size_p}, EP={epochs_p}, LR={lr_p} ===")
-      f1 = run_training(cwe_id_loop_var, model_path, batch_size_p, epochs_p, lr_p, layers_p, weight_decay_p, grad_accumulation_steps_p, root_loop_var)
-      results.append((cwe_id_loop_var, os.path.basename(root_loop_var), batch_size_p, epochs_p, lr_p, layers_p, weight_decay_p, grad_accumulation_steps_p, f1))
+      f1 = run_training(cwe_id_loop_var, model_path, batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p, root_loop_var)
+      results.append((cwe_id_loop_var, os.path.basename(root_loop_var), batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p, f1))
 
 results.sort(key=lambda x: -x[-1]) # Sort by F1 score
 print("\nTop Configurations (if training was run):")
