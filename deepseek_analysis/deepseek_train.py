@@ -349,19 +349,19 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, weight_decay, grad_
 #    evaluate_model(model_dir, cwe_id, root)
     return best_f1
 
-grid = product(batch_sizes, epochs_list, learning_rates, weight_decays, GRADIENT_ACCUMULATION_STEPS)
+hyperparameter_combinations = list(product(batch_sizes, epochs_list, learning_rates, weight_decays, GRADIENT_ACCUMULATION_STEPS))
 results = []
+
 for cwe_id_loop_var in TARGET_CWE_IDS:
   for root_loop_var in DATASET_ROOTS:
-    for batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p in grid:
+    for batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p in hyperparameter_combinations:
       if (cwe_id_loop_var == 'CWE-787' and root_loop_var == '/vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename'):
+        print(f"Skipping combination: CWE={cwe_id_loop_var}, Root={os.path.basename(root_loop_var)} due to explicit condition.")
         continue
-      # Check skips if necessary for training runs too
-      print(f"\n=== Training: CWE={cwe_id_loop_var}, Root={os.path.basename(root_loop_var)}, BS={batch_size_p}, EP={epochs_p}, LR={lr_p} ===")
+      print(f"\n=== Training: CWE={cwe_id_loop_var}, Root={os.path.basename(root_loop_var)}, BS={batch_size_p}, EP={epochs_p}, LR={lr_p}, WD={weight_decay_p}, ACCUM={grad_accumulation_steps_p} ===")
       f1 = run_training(cwe_id_loop_var, model_path, batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p, root_loop_var)
       results.append((cwe_id_loop_var, os.path.basename(root_loop_var), batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p, f1))
 
-results.sort(key=lambda x: -x[-1]) # Sort by F1 score
-
+results.sort(key=lambda x: -x[-1]) 
 tee.close()
 print("Log saved to ./test_untrained_log.txt")
