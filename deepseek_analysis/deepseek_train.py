@@ -150,7 +150,7 @@ def compute_metrics(preds, labels):
     preds = torch.sigmoid(preds).detach().cpu().numpy()
     preds_bin = (preds > 0.5).astype(int)
     labels = labels.cpu().numpy()
-    precision, recall, f1, _ = precision_recall_fscore_support(labels, preds_bin, average='binary', zero_division=0)
+    precision, recall, f1, _ = precision_recall_fscore_support(labels, preds_bin, average='macro', zero_division=0)
     acc = accuracy_score(labels, preds_bin)
     return {
         "accuracy": acc,
