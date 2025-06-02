@@ -1,0 +1,7 @@
+Language,True Positives,False Positives,True Negatives,False Negatives,Precision,Recall,F1,Accuracy
+c,0,0,3,3,0.0,0.0,0.0,0.5
+cpp,0,0,5,5,0.0,0.0,0.0,0.5
+cs,0,0,5,5,0.0,0.0,0.0,0.5
+java,0,0,33,33,0.0,0.0,0.0,0.5
+py,0,0,56,56,0.0,0.0,0.0,0.5
+php,0,20,890,910,0.0,0.0,0.0,0.489010989010989
