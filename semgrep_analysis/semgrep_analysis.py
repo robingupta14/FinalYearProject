@@ -8,7 +8,7 @@ from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 DATASET_ROOT = "../../Preprocessed/NoRename"
-ALLOWED_CWE_IDS = {"CWE-89"} #"CWE-79", "CWE-89", "CWE-787"
+ALLOWED_CWE_IDS = {"CWE-787"} #"CWE-79", "CWE-89", "CWE-787"
 LANGUAGES = ['c', 'cpp', 'cs', 'java', 'py', 'php']
 OUTPUT_CSV = "semgrep_filtered_results.csv"
 BENCHMARK_CSV = "semgrep_benchmark_results.csv"
