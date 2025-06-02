@@ -180,7 +180,7 @@ accelerator = Accelerator()
 batch_sizes = [1]
 epochs_list = [3]
 learning_rates = [1e-5]
-weight_decays = [0]
+weight_decays = [0, 0.01]
 GRADIENT_ACCUMULATION_STEPS = [8]
 
 def evaluate_model(model_dir, cwe_id, root):

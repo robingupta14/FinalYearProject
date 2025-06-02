@@ -456,9 +456,13 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, layers, weight_deca
 
 skip_combinations = [
     ("CWE-22", "CrossVul"),
+    ("CWE-22", "NoRename"),
+    ("CWE-22", "Rename"),
     ("CWE-79", "CrossVul"),
-    ("CWE-79", "NoRename"), 
+    ("CWE-79", "NoRename"),
+    ("CWE-79", "Rename"), 
     ("CWE-89", "CrossVul"),
+    ("CWE-89", "Rename"),
     ("CWE-787", "CrossVul")
 ]
 
