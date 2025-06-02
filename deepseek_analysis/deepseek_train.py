@@ -163,8 +163,7 @@ def compute_metrics(preds, labels):
 logfile_path = "./test_untrained_log.txt"
 tee = Tee(logfile_path)
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
-DATASET_ROOTS = ["/vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename", 
-                 "/vol/bitbucket/rg721/CrossVul"]
+DATASET_ROOTS = ["/vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename", "/vol/bitbucket/rg721/CrossVul"]
 TARGET_CWE_IDS = ["CWE-787", "CWE-89", "CWE-79"]
 LANGUAGES = ['c', 'cpp', 'cs', 'java', 'py', 'php']
 SEED = 42
@@ -355,15 +354,14 @@ results = []
 for cwe_id_loop_var in TARGET_CWE_IDS:
   for root_loop_var in DATASET_ROOTS:
     for batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p in grid:
+      if (cwe_id_loop_var == 'CWE-787' and root_loop_var == '/vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename'):
+        continue
       # Check skips if necessary for training runs too
-      print(f"\n=== Potentially Running Training: CWE={cwe_id_loop_var}, Root={os.path.basename(root_loop_var)}, BS={batch_size_p}, EP={epochs_p}, LR={lr_p} ===")
+      print(f"\n=== Training: CWE={cwe_id_loop_var}, Root={os.path.basename(root_loop_var)}, BS={batch_size_p}, EP={epochs_p}, LR={lr_p} ===")
       f1 = run_training(cwe_id_loop_var, model_path, batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p, root_loop_var)
       results.append((cwe_id_loop_var, os.path.basename(root_loop_var), batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p, f1))
 
 results.sort(key=lambda x: -x[-1]) # Sort by F1 score
-print("\nTop Configurations (if training was run):")
-for config in results[:5]:
-  print(f"CWE={config[0]}, Dataset={config[1]}, BS={config[2]}, EP={config[3]}, LR={config[4]}, Layers={config[5]}, WD={config[6]}, GradAccum={config[7]} -> F1={config[8]:.4f}")
 
 tee.close()
 print("Log saved to ./test_untrained_log.txt")
