@@ -481,13 +481,15 @@ logfile_path = "./trained_models_evaluation_log.txt"
 # print("\nFinished batch testing of untrained models.")
 MODELS_TO_EVALUATE_DIR = "/vol/bitbucket/rg721/FinalYearProject/newruns/models"
 dataset_name_to_root_map = {os.path.basename(p): p for p in DATASET_ROOTS}
+skips = ["vulberta_CWE-89_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename", "vulberta_CWE-89_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul"]
 
 if not os.path.exists(MODELS_TO_EVALUATE_DIR) or not os.listdir(MODELS_TO_EVALUATE_DIR):
     print(f"Model directory {MODELS_TO_EVALUATE_DIR} is empty or does not exist. No models to evaluate.")
 else:
-    # List all items in the models directory
     for model_dir_name in os.listdir(MODELS_TO_EVALUATE_DIR):
         model_full_path = os.path.join(MODELS_TO_EVALUATE_DIR, model_dir_name)
+        if (model_dir_name in skips):
+            continue
 
         if not os.path.isdir(model_full_path):
             print(f"Skipping {model_dir_name}, not a directory.")
