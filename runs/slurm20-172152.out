@@ -1,0 +1,43 @@
+Mon Jun  2 11:16:48 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.120                Driver Version: 550.120        CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A40                     Off |   00000000:00:10.0 Off |                    0 |
+|  0%   33C    P8             22W /  300W |       1MiB /  46068MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+ 11:16:48 up 47 days, 16 min,  0 user,  load average: 0.17, 0.10, 0.02
+Using device: cuda
+
+Starting batch testing of untrained models...
+
+SKIPPING: CWE CWE-22 on dataset Rename (path: /vol/bitbucket/rg721/FinalYearProject/Preprocessed/Rename) as per provided list.
+
+SKIPPING: CWE CWE-22 on dataset NoRename (path: /vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename) as per provided list.
+
+SKIPPING: CWE CWE-22 on dataset CrossVul (path: /vol/bitbucket/rg721/CrossVul) as per provided list.
+
+SKIPPING: CWE CWE-79 on dataset Rename (path: /vol/bitbucket/rg721/FinalYearProject/Preprocessed/Rename) as per provided list.
+
+SKIPPING: CWE CWE-79 on dataset NoRename (path: /vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename) as per provided list.
+
+SKIPPING: CWE CWE-79 on dataset CrossVul (path: /vol/bitbucket/rg721/CrossVul) as per provided list.
+
+SKIPPING: CWE CWE-89 on dataset Rename (path: /vol/bitbucket/rg721/FinalYearProject/Preprocessed/Rename) as per provided list.
+
+--- Testing untrained model for CWE-CWE-89 on dataset: NoRename ---
+554
+Map:   0%|          | 0/554 [00:00<?, ? examples/s]Map: 100%|##########| 554/554 [00:05<00:00, 94.22 examples/s]Map: 100%|##########| 554/554 [00:05<00:00, 92.74 examples/s]
+Evaluating CWE-89 on NoRename:   0%|          | 0/554 [00:00<?, ?it/s]Evaluating CWE-89 on NoRename:   0%|          | 1/554 [00:09<1:25:48,  9.31s/it]Evaluating CWE-89 on NoRename:   0%|          | 2/554 [00:11<45:01,  4.89s/it]  Evaluating CWE-89 on NoRename:   1%|          | 3/554 [00:12<31:57,  3.48s/it]Evaluating CWE-89 on NoRename:   1%|          | 4/554 [00:14<25:48,  2.82s/it]Evaluating CWE-89 on NoRename:   1%|          | 5/554 [00:16<22:24,  2.45s/it]Evaluating CWE-89 on NoRename:   1%|1         | 6/554 [00:18<20:21,  2.23s/it]Evaluating CWE-89 on NoRename:   1%|1         | 7/554 [00:20<19:01,  2.09s/it]Evaluating CWE-89 on NoRename:   1%|1         | 8/554 [00:21<18:11,  2.00s/it]Evaluating CWE-89 on NoRename:   2%|1         | 9/554 [00:23<17:35,  1.94s/it]Evaluating CWE-89 on NoRename:   2%|1         | 10/554 [00:25<17:10,  1.89s/it]Evaluating CWE-89 on NoRename:   2%|1         | 11/554 [00:27<16:52,  1.87s/it]Evaluating CWE-89 on NoRename:   2%|2         | 12/554 [00:29<16:39,  1.84s/it]Evaluating CWE-89 on NoRename:   2%|2         | 13/554 [00:30<16:30,  1.83s/it]Evaluating CWE-89 on NoRename:   3%|2         | 14/554 [00:32<16:23,  1.82s/it]Evaluating CWE-89 on NoRename:   3%|2         | 15/554 [00:34<16:18,  1.81s/it]slurmstepd: error: *** JOB 172152 ON gpuvm06 CANCELLED AT 2025-06-02T11:20:29 ***
