@@ -13,3 +13,4 @@ deepseek_analysis/.*
 tree-sitters/
 preprocessor/__pycache__
 runs/models
+*/models
