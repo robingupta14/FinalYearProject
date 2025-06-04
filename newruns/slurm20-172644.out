@@ -1,0 +1,95 @@
+Wed Jun  4 01:05:02 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.120                Driver Version: 550.120        CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A40                     Off |   00000000:00:10.0 Off |                    0 |
+|  0%   31C    P8             21W /  300W |       1MiB /  46068MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+ 01:05:02 up 39 days, 25 min,  0 user,  load average: 2.13, 2.20, 2.22
+Using device: cuda
+
+Processing model directory: vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul
+  Model: vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul
+  Parsed CWE ID: CWE-787
+  Parsed Dataset Short Name: CrossVul
+  Evaluation Dataset Path: /vol/bitbucket/rg721/CrossVul
+
+Evaluating /vol/bitbucket/rg721/FinalYearProject/newruns/models/vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul...
+270
+Map:   0%|          | 0/270 [00:00<?, ? examples/s]Map: 100%|##########| 270/270 [00:04<00:00, 60.32 examples/s]Map: 100%|##########| 270/270 [00:04<00:00, 59.71 examples/s]
+Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:   0%|          | 0/54 [00:00<?, ?it/s]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:   2%|1         | 1/54 [00:04<04:08,  4.69s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:   4%|3         | 2/54 [00:10<04:48,  5.54s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:   6%|5         | 3/54 [00:15<04:19,  5.08s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:   7%|7         | 4/54 [00:21<04:35,  5.52s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:   9%|9         | 5/54 [00:26<04:13,  5.17s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  11%|#1        | 6/54 [00:32<04:24,  5.51s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  13%|#2        | 7/54 [00:36<04:04,  5.19s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  15%|#4        | 8/54 [00:41<03:49,  4.99s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  17%|#6        | 9/54 [00:47<04:01,  5.36s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  19%|#8        | 10/54 [00:53<04:07,  5.61s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  20%|##        | 11/54 [00:58<03:47,  5.29s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  22%|##2       | 12/54 [01:02<03:32,  5.07s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  24%|##4       | 13/54 [01:09<03:41,  5.41s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  26%|##5       | 14/54 [01:13<03:26,  5.16s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  28%|##7       | 15/54 [01:19<03:33,  5.47s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  30%|##9       | 16/54 [01:24<03:17,  5.20s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  31%|###1      | 17/54 [01:28<03:05,  5.01s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  33%|###3      | 18/54 [01:35<03:13,  5.37s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  35%|###5      | 19/54 [01:41<03:17,  5.63s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  37%|###7      | 20/54 [01:47<03:17,  5.81s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  39%|###8      | 21/54 [01:53<03:15,  5.93s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  41%|####      | 22/54 [02:00<03:12,  6.02s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  43%|####2     | 23/54 [02:06<03:08,  6.08s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  44%|####4     | 24/54 [02:12<03:03,  6.13s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  46%|####6     | 25/54 [02:18<02:58,  6.16s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  48%|####8     | 26/54 [02:25<02:53,  6.18s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  50%|#####     | 27/54 [02:31<02:47,  6.20s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  52%|#####1    | 28/54 [02:37<02:41,  6.21s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  54%|#####3    | 29/54 [02:43<02:35,  6.22s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  56%|#####5    | 30/54 [02:49<02:29,  6.22s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  57%|#####7    | 31/54 [02:54<02:11,  5.73s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  59%|#####9    | 32/54 [03:00<02:09,  5.88s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  61%|######1   | 33/54 [03:05<01:55,  5.50s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  63%|######2   | 34/54 [03:09<01:44,  5.23s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  65%|######4   | 35/54 [03:16<01:45,  5.53s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  67%|######6   | 36/54 [03:20<01:34,  5.25s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  69%|######8   | 37/54 [03:25<01:25,  5.05s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  70%|#######   | 38/54 [03:31<01:26,  5.41s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  72%|#######2  | 39/54 [03:36<01:17,  5.17s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  74%|#######4  | 40/54 [03:40<01:09,  4.99s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  76%|#######5  | 41/54 [03:47<01:09,  5.37s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  78%|#######7  | 42/54 [03:53<01:07,  5.63s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  80%|#######9  | 43/54 [03:59<01:03,  5.81s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  81%|########1 | 44/54 [04:05<00:59,  5.94s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  83%|########3 | 45/54 [04:10<00:49,  5.54s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  85%|########5 | 46/54 [04:16<00:46,  5.75s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  87%|########7 | 47/54 [04:21<00:37,  5.41s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  89%|########8 | 48/54 [04:25<00:30,  5.16s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  91%|######### | 49/54 [04:30<00:24,  4.99s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  93%|#########2| 50/54 [04:36<00:21,  5.36s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  94%|#########4| 51/54 [04:42<00:16,  5.63s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  96%|#########6| 52/54 [04:49<00:11,  5.81s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul:  98%|#########8| 53/54 [04:55<00:05,  5.94s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul: 100%|##########| 54/54 [05:01<00:00,  6.03s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul: 100%|##########| 54/54 [05:01<00:00,  5.59s/it]
+
+Classification Report for vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul on CWE-787 (CrossVul):
+              precision    recall  f1-score   support
+
+        good     0.5217    0.5217    0.5217        23
+         bad     0.6452    0.6452    0.6452        31
+
+    accuracy                         0.5926        54
+   macro avg     0.5835    0.5835    0.5835        54
+weighted avg     0.5926    0.5926    0.5926        54
+
+
+Confusion Matrix (numeric):
+[[12 11]
+ [11 20]]
+Evaluation confusion matrix saved to vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul_CWE-787_CrossVul_eval_confusion_matrix.png
+
+Processing model directory: vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename
+  Model: vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename
+  Parsed CWE ID: CWE-787
+  Parsed Dataset Short Name: NoRename
+  Evaluation Dataset Path: /vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename
+
+Evaluating /vol/bitbucket/rg721/FinalYearProject/newruns/models/vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename...
+270
+Map:   0%|          | 0/270 [00:00<?, ? examples/s]Map: 100%|##########| 270/270 [00:03<00:00, 76.11 examples/s]Map: 100%|##########| 270/270 [00:03<00:00, 75.15 examples/s]
+Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename:   0%|          | 0/54 [00:00<?, ?it/s]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename:   2%|1         | 1/54 [00:06<05:25,  6.14s/it]Evaluating vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename:   2%|1         | 1/54 [00:12<11:12, 12.69s/it]
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/deepseek_analysis/deepseek.py", line 515, in <module>
+    evaluate_model(model_dir=model_full_path, 
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/deepseek_analysis/deepseek.py", line 323, in evaluate_model
+    outputs = model(**batch)
+              ^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/deepseek_analysis/deepseek.py", line 44, in forward
+    outputs = self.base_model(
+              ^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/transformers/models/qwen2/modeling_qwen2.py", line 1118, in forward
+    logits = self.lm_head(hidden_states)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/torch/nn/modules/linear.py", line 116, in forward
+    return F.linear(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 9.27 GiB. GPU 0 has a total capacity of 44.34 GiB of which 8.22 GiB is free. Including non-PyTorch memory, this process has 36.11 GiB memory in use. Of the allocated memory 25.70 GiB is allocated by PyTorch, and 10.10 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
