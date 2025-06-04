@@ -111,6 +111,30 @@ class Tee(object):
         sys.stdout = self.stdout
         sys.stderr = self.stderr
 
+def collect_all_cwe_files(cwe_ids, root):
+    all_samples = []
+    for cwe_id in cwe_ids:
+        print(f"Collecting files for {cwe_id} from {root}")
+        for lang in LANGUAGES:
+            lang_dir = os.path.join(root, cwe_id, lang)
+            if not os.path.isdir(lang_dir):
+                continue
+            for filename in os.listdir(lang_dir):
+                filepath = os.path.join(lang_dir, filename)
+                if filename.endswith('.DS_Store'):
+                    continue
+                label = 1 if "bad" in filename.lower() else 0
+                with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                    code = f.read()
+                all_samples.append({
+                    "filename": filename,
+                    "code": code,
+                    "label": label,
+                    "cwe_id": cwe_id 
+                })
+    print(f"Total samples collected across all CWEs: {len(all_samples)}")
+    return all_samples
+
 def collect_files_for_cwe(cwe_id, root):
     samples = []
     for lang in LANGUAGES:
@@ -131,6 +155,20 @@ def collect_files_for_cwe(cwe_id, root):
             })
     print(len(samples))
     return samples
+
+def tokenize_example(batch, max_length=16384):
+    tokens = tokenizer(
+        [f"Does this source code contain a vulnerability? {code}" for code in batch["code"]],
+        return_attention_mask=True,
+        truncation=True,
+        padding="max_length",
+        max_length=max_length,
+    )
+    return {
+        "input_ids": tokens["input_ids"],
+        "attention_mask": tokens["attention_mask"],
+        "label": batch["label"],
+    }
 
 def tokenize_example(batch, cwe_id, max_length=16384):
     tokens = tokenizer(
@@ -349,19 +387,127 @@ def run_training(cwe_id, model_path, batch_size, epochs, lr, weight_decay, grad_
 #    evaluate_model(model_dir, cwe_id, root)
     return best_f1
 
+
+def run_training_overall(model_path, batch_size, epochs, lr, weight_decay, grad_accumulation_steps, root, all_cwe_samples, warmup_ratio=0.1):
+    model_dir = f"./models/overall_vulberta_bs{batch_size}_ep{epochs}_lr{lr}_wd{weight_decay}_accum{grad_accumulation_steps}_ds{root.split('/')[-1]}"
+    best_f1 = 0
+    random.seed(SEED)
+    random.shuffle(all_cwe_samples)
+    raw_dataset = Dataset.from_list(all_cwe_samples)
+    tokenized_dataset = raw_dataset.map(
+        tokenize_example,
+        batched=True,
+        remove_columns=["filename", "code", "cwe_id"]
+    )
+
+    tokenized_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'label'])
+    train_test = tokenized_dataset.train_test_split(test_size=0.2, seed=SEED)
+    train_loader = DataLoader(train_test["train"], batch_size=batch_size, shuffle=True)
+    eval_loader = DataLoader(train_test["test"], batch_size=1)
+
+    base_model = Qwen2ForCausalLM.from_pretrained(
+        model_path,
+        torch_dtype=torch.float16,
+        device_map="auto",
+        trust_remote_code=True
+    )
+    hidden_size = base_model.config.hidden_size
+    model = CausalLMWithClassifier(base_model, hidden_size, num_labels=2).to(accelerator.device)
+
+    set_trainable_layers(model)
+
+    optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+    num_train_steps = len(train_loader) * epochs // grad_accumulation_steps
+    scheduler = get_cosine_schedule_with_warmup(
+        optimizer,
+        num_warmup_steps=int(warmup_ratio * num_train_steps),
+        num_training_steps=num_train_steps
+    )
+
+    model.train()
+    best_f1 = 0.0
+
+    for epoch in range(epochs):
+        print(f"\nEpoch {epoch + 1}/{epochs}")
+        running_loss = 0.0
+        optimizer.zero_grad()
+        for step, batch in enumerate(tqdm(accelerator.prepare(train_loader))):
+            batch = {k: v.to(accelerator.device) for k, v in batch.items()}
+            with autocast():
+                if 'label' in batch:
+                    batch['labels'] = batch.pop('label')
+                outputs = model(**batch)
+            
+            loss = outputs.loss / grad_accumulation_steps
+            accelerator.backward(loss)
+
+            if (step + 1) % grad_accumulation_steps == 0:
+                optimizer.step()
+                scheduler.step()
+                optimizer.zero_grad()
+
+            running_loss += loss.item()
+
+        print(f"Training Loss: {running_loss / len(train_loader):.4f}")
+
+        model.eval()
+        all_preds = []
+        all_labels = []
+        with torch.no_grad():
+            for batch in tqdm(accelerator.prepare(eval_loader)):
+                batch = {k: v.to(accelerator.device) for k, v in batch.items()}
+                if 'label' in batch:
+                    batch['labels'] = batch.pop('label')
+                outputs = model(**batch)
+                all_preds.append(outputs.logits.squeeze(-1))
+                all_labels.append(batch["labels"])
+
+        preds = torch.cat(all_preds)
+        labels = torch.cat(all_labels)
+        metrics = compute_metrics(preds, labels)
+        f1_score = metrics["f1"]
+        print(metrics)
+
+        if f1_score > best_f1:
+            print(f"New best F1 score: {f1_score}. Saving model...")
+            best_f1 = f1_score
+            model.base_model.save_pretrained(model_dir)
+            torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
+
+    print(f"Finished training for {cwe_id} with F1: {best_f1}")
+#    evaluate_model(model_dir, cwe_id, root)
+    return best_f1
+
 hyperparameter_combinations = list(product(batch_sizes, epochs_list, learning_rates, weight_decays, GRADIENT_ACCUMULATION_STEPS))
+
+# results = []
+
+# for cwe_id_loop_var in TARGET_CWE_IDS:
+#   for root_loop_var in DATASET_ROOTS:
+#     for batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p in hyperparameter_combinations:
+#       if (cwe_id_loop_var == 'CWE-787' and root_loop_var == '/vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename'):
+#         print(f"Skipping combination: CWE={cwe_id_loop_var}, Root={os.path.basename(root_loop_var)} due to explicit condition.")
+#         continue
+#       print(f"\n=== Training: CWE={cwe_id_loop_var}, Root={os.path.basename(root_loop_var)}, BS={batch_size_p}, EP={epochs_p}, LR={lr_p}, WD={weight_decay_p}, ACCUM={grad_accumulation_steps_p} ===")
+#       f1 = run_training(cwe_id_loop_var, model_path, batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p, root_loop_var)
+#       results.append((cwe_id_loop_var, os.path.basename(root_loop_var), batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p, f1))
+
+# results.sort(key=lambda x: -x[-1]) 
+# tee.close()
+# print("Log saved to ./test_untrained_log.txt")
+
 results = []
-
-for cwe_id_loop_var in TARGET_CWE_IDS:
-  for root_loop_var in DATASET_ROOTS:
-    for batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p in hyperparameter_combinations:
-      if (cwe_id_loop_var == 'CWE-787' and root_loop_var == '/vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename'):
-        print(f"Skipping combination: CWE={cwe_id_loop_var}, Root={os.path.basename(root_loop_var)} due to explicit condition.")
+for root_loop_var in DATASET_ROOTS:
+    all_combined_samples = collect_all_cwe_files(TARGET_CWE_IDS, root_loop_var)
+    if not all_combined_samples:
+        print(f"No samples found for overall training in {root_loop_var}. Skipping.")
         continue
-      print(f"\n=== Training: CWE={cwe_id_loop_var}, Root={os.path.basename(root_loop_var)}, BS={batch_size_p}, EP={epochs_p}, LR={lr_p}, WD={weight_decay_p}, ACCUM={grad_accumulation_steps_p} ===")
-      f1 = run_training(cwe_id_loop_var, model_path, batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p, root_loop_var)
-      results.append((cwe_id_loop_var, os.path.basename(root_loop_var), batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p, f1))
 
-results.sort(key=lambda x: -x[-1]) 
+    for batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p in hyperparameter_combinations:
+        print(f"\n=== Overall Training: Root={os.path.basename(root_loop_var)}, BS={batch_size_p}, EP={epochs_p}, LR={lr_p}, WD={weight_decay_p}, ACCUM={grad_accumulation_steps_p} ===")
+        f1 = run_training_overall(model_path, batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p, root_loop_var, all_combined_samples)
+        results.append(("OVERALL", os.path.basename(root_loop_var), batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p, f1))
+
+results.sort(key=lambda x: -x[-1])
 tee.close()
 print("Log saved to ./test_untrained_log.txt")
