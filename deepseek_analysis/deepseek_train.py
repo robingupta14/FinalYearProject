@@ -156,7 +156,7 @@ def collect_files_for_cwe(cwe_id, root):
     print(len(samples))
     return samples
 
-def tokenize_example(batch, max_length=16384):
+def tokenize_exampler(batch, max_length=16384):
     tokens = tokenizer(
         [f"Does this source code contain a vulnerability? {code}" for code in batch["code"]],
         return_attention_mask=True,
@@ -395,7 +395,7 @@ def run_training_overall(model_path, batch_size, epochs, lr, weight_decay, grad_
     random.shuffle(all_cwe_samples)
     raw_dataset = Dataset.from_list(all_cwe_samples)
     tokenized_dataset = raw_dataset.map(
-        tokenize_example,
+        tokenize_exampler,
         batched=True,
         remove_columns=["filename", "code", "cwe_id"]
     )
@@ -474,7 +474,7 @@ def run_training_overall(model_path, batch_size, epochs, lr, weight_decay, grad_
             model.base_model.save_pretrained(model_dir)
             torch.save(model.classifier, os.path.join(model_dir, "classifier.pt"))
 
-    print(f"Finished training for {cwe_id} with F1: {best_f1}")
+    print(f"Finished training for model with F1: {best_f1}")
 #    evaluate_model(model_dir, cwe_id, root)
     return best_f1
 
