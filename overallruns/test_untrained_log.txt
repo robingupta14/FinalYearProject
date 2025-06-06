@@ -224,3 +224,30 @@ Traceback (most recent call last):
     eval_dataset_root_path = dataset_name_to_root_map[parsed_dataset_short_name]
                              ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
 KeyError: 'Rename'
+Using device: cuda
+  Model: overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul
+  Parsed CWE ID: vulberta
+  Parsed Dataset Short Name: CrossVul
+  Evaluation Dataset Path: /vol/bitbucket/rg721/CrossVul
+
+Evaluating /vol/bitbucket/rg721/FinalYearProject/overallruns/models/overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul...
+0
+No samples found for vulberta in /vol/bitbucket/rg721/CrossVul for evaluation of /vol/bitbucket/rg721/FinalYearProject/overallruns/models/overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul
+  Model: overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename
+  Parsed CWE ID: vulberta
+  Parsed Dataset Short Name: NoRename
+  Evaluation Dataset Path: /vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename
+
+Evaluating /vol/bitbucket/rg721/FinalYearProject/overallruns/models/overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename...
+0
+No samples found for vulberta in /vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename for evaluation of /vol/bitbucket/rg721/FinalYearProject/overallruns/models/overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename
+  Model: overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsRename
+  Parsed CWE ID: vulberta
+  Parsed Dataset Short Name: Rename
+  Evaluation Dataset Path: /vol/bitbucket/rg721/FinalYearProject/Preprocessed/Rename
+
+Evaluating /vol/bitbucket/rg721/FinalYearProject/overallruns/models/overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsRename...
+0
+No samples found for vulberta in /vol/bitbucket/rg721/FinalYearProject/Preprocessed/Rename for evaluation of /vol/bitbucket/rg721/FinalYearProject/overallruns/models/overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsRename
+
+--- Finished Evaluation of Trained Models ---
