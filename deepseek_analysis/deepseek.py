@@ -479,9 +479,9 @@ logfile_path = "./trained_models_evaluation_log.txt"
 #         test_untrained(cwe_id=cwe_id_to_test, root=dataset_root_path)
 
 # print("\nFinished batch testing of untrained models.")
-MODELS_TO_EVALUATE_DIR = "/vol/bitbucket/rg721/FinalYearProject/newruns/models"
+MODELS_TO_EVALUATE_DIR = "/vol/bitbucket/rg721/FinalYearProject/overallruns/models"
 dataset_name_to_root_map = {os.path.basename(p): p for p in DATASET_ROOTS}
-skips = ["vulberta_CWE-89_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename", "vulberta_CWE-89_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul"]
+skips = []
 
 if not os.path.exists(MODELS_TO_EVALUATE_DIR) or not os.listdir(MODELS_TO_EVALUATE_DIR):
     print(f"Model directory {MODELS_TO_EVALUATE_DIR} is empty or does not exist. No models to evaluate.")
@@ -505,7 +505,7 @@ else:
             print(f"Skipping model '{model_dir_name}': Dataset short name '{parsed_dataset_short_name}' not found in DATASET_ROOTS mapping.")
             print(f"Available dataset short names: {list(dataset_name_to_root_map.keys())}")
             continue
-            
+             
         eval_dataset_root_path = dataset_name_to_root_map[parsed_dataset_short_name]
 
         print(f"  Model: {model_dir_name}")
