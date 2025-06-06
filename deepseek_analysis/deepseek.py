@@ -481,34 +481,18 @@ logfile_path = "./trained_models_evaluation_log.txt"
 # print("\nFinished batch testing of untrained models.")
 MODELS_TO_EVALUATE_DIR = "/vol/bitbucket/rg721/FinalYearProject/overallruns/models"
 dataset_name_to_root_map = {os.path.basename(p): p for p in DATASET_ROOTS}
-<<<<<<< Updated upstream
 skips = []
-=======
-skips = ["vulberta_CWE-8_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename", "vulberta_CWE-9_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul", "vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul", "vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename", "vulberta_CWE-79_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename", "vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul_CWE-787_CrossVul", "vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename", "vulberta_CWE-79_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul", "vulberta_CWE-79_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename_CWE-79"]
->>>>>>> Stashed changes
 
 if not os.path.exists(MODELS_TO_EVALUATE_DIR) or not os.listdir(MODELS_TO_EVALUATE_DIR):
     print(f"Model directory {MODELS_TO_EVALUATE_DIR} is empty or does not exist. No models to evaluate.")
 else:
     for model_dir_name in os.listdir(MODELS_TO_EVALUATE_DIR):
         model_full_path = os.path.join(MODELS_TO_EVALUATE_DIR, model_dir_name)
-        if (model_dir_name in skips):
-            continue
-
-        if not os.path.isdir(model_full_path):
-            print(f"Skipping {model_dir_name}, not a directory.")
-            continue
-        
-        print(f"\nProcessing model directory: {model_dir_name}")
         parts = model_dir_name.split('_')
         parsed_cwe_id = parts[1]
             
         dataset_tag_from_name = parts[-1]
         parsed_dataset_short_name = dataset_tag_from_name[2:]
-        if parsed_dataset_short_name not in dataset_name_to_root_map:
-            print(f"Skipping model '{model_dir_name}': Dataset short name '{parsed_dataset_short_name}' not found in DATASET_ROOTS mapping.")
-            print(f"Available dataset short names: {list(dataset_name_to_root_map.keys())}")
-            continue
              
         eval_dataset_root_path = dataset_name_to_root_map[parsed_dataset_short_name]
 

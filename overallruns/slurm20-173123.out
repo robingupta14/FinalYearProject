@@ -1,0 +1,49 @@
+Fri Jun  6 17:52:41 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.120                Driver Version: 550.120        CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A40                     Off |   00000000:00:10.0 Off |                    0 |
+|  0%   31C    P8             22W /  300W |       1MiB /  46068MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+ 17:52:41 up 41 days, 17:12,  0 user,  load average: 1.02, 1.60, 1.66
+Using device: cuda
+
+Processing model directory: overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul
+  Model: overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul
+  Parsed CWE ID: vulberta
+  Parsed Dataset Short Name: CrossVul
+  Evaluation Dataset Path: /vol/bitbucket/rg721/CrossVul
+
+Evaluating /vol/bitbucket/rg721/FinalYearProject/overallruns/models/overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul...
+0
+No samples found for vulberta in /vol/bitbucket/rg721/CrossVul for evaluation of /vol/bitbucket/rg721/FinalYearProject/overallruns/models/overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul
+
+Processing model directory: overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename
+  Model: overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename
+  Parsed CWE ID: vulberta
+  Parsed Dataset Short Name: NoRename
+  Evaluation Dataset Path: /vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename
+
+Evaluating /vol/bitbucket/rg721/FinalYearProject/overallruns/models/overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename...
+0
+No samples found for vulberta in /vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename for evaluation of /vol/bitbucket/rg721/FinalYearProject/overallruns/models/overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename
+
+Processing model directory: overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsRename
+Skipping model 'overall_vulberta_bs1_ep3_lr1e-05_wd0_accum8_dsRename': Dataset short name 'Rename' not found in DATASET_ROOTS mapping.
+Available dataset short names: ['NoRename', 'CrossVul']
+
+--- Finished Evaluation of Trained Models ---
+Log saved to ./test_untrained_log.txt
