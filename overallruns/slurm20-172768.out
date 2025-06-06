@@ -1,0 +1,49 @@
+Thu Jun  5 07:33:23 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.120                Driver Version: 550.120        CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A40                     Off |   00000000:00:11.0 Off |                    0 |
+|  0%   36C    P8             22W /  300W |       1MiB /  46068MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+ 07:33:23 up 49 days, 20:32,  0 user,  load average: 2.12, 5.39, 6.47
+Using device: cuda
+Collecting files for CWE-89 from /vol/bitbucket/rg721/CrossVul
+Total samples collected across all CWEs: 554
+
+=== Overall Training: Root=CrossVul, BS=1, EP=3, LR=1e-05, WD=0, ACCUM=8 ===
+Map:   0%|          | 0/554 [00:00<?, ? examples/s]Map:   0%|          | 0/554 [00:00<?, ? examples/s]
+Traceback (most recent call last):
+  File "/vol/bitbucket/rg721/FinalYearProject/deepseek_analysis/deepseek_train.py", line 508, in <module>
+    f1 = run_training_overall(model_path, batch_size_p, epochs_p, lr_p, weight_decay_p, grad_accumulation_steps_p, root_loop_var, all_combined_samples)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/deepseek_analysis/deepseek_train.py", line 397, in run_training_overall
+    tokenized_dataset = raw_dataset.map(
+                        ^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/datasets/arrow_dataset.py", line 593, in wrapper
+    out: Union["Dataset", "DatasetDict"] = func(self, *args, **kwargs)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/datasets/arrow_dataset.py", line 558, in wrapper
+    out: Union["Dataset", "DatasetDict"] = func(self, *args, **kwargs)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/datasets/arrow_dataset.py", line 3105, in map
+    for rank, done, content in Dataset._map_single(**dataset_kwargs):
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/datasets/arrow_dataset.py", line 3482, in _map_single
+    batch = apply_function_on_filtered_inputs(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vol/bitbucket/rg721/FinalYearProject/venv/lib/python3.12/site-packages/datasets/arrow_dataset.py", line 3361, in apply_function_on_filtered_inputs
+    processed_inputs = function(*fn_args, *additional_args, **fn_kwargs)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: tokenize_example() missing 1 required positional argument: 'cwe_id'

@@ -201,7 +201,7 @@ def compute_metrics(preds, labels):
 logfile_path = "./test_untrained_log.txt"
 tee = Tee(logfile_path)
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
-DATASET_ROOTS = ["/vol/bitbucket/rg721/CrossVul"]
+DATASET_ROOTS = ["/vol/bitbucket/rg721/CrossVul", "/vol/bitbucket/rg721/FinalYearProject/Preprocessed/Rename", "/vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename"]
 TARGET_CWE_IDS = ["CWE-22", "CWE-79", "CWE-89", "CWE-787"]
 LANGUAGES = ['c', 'cpp', 'cs', 'java', 'py', 'php']
 SEED = 42

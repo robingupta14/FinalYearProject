@@ -166,7 +166,7 @@ os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 DATASET_ROOTS = [
                  "/vol/bitbucket/rg721/FinalYearProject/Preprocessed/NoRename", 
                  "/vol/bitbucket/rg721/CrossVul"]
-TARGET_CWE_IDS = ["CWE-89", "CWE-787"]
+TARGET_CWE_IDS = ["CWE-89"]
 LANGUAGES = ['c', 'cpp', 'cs', 'java', 'py', 'php']
 SEED = 42
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -481,7 +481,11 @@ logfile_path = "./trained_models_evaluation_log.txt"
 # print("\nFinished batch testing of untrained models.")
 MODELS_TO_EVALUATE_DIR = "/vol/bitbucket/rg721/FinalYearProject/overallruns/models"
 dataset_name_to_root_map = {os.path.basename(p): p for p in DATASET_ROOTS}
+<<<<<<< Updated upstream
 skips = []
+=======
+skips = ["vulberta_CWE-8_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename", "vulberta_CWE-9_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul", "vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul", "vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename", "vulberta_CWE-79_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename", "vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul_CWE-787_CrossVul", "vulberta_CWE-787_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename", "vulberta_CWE-79_bs1_ep3_lr1e-05_wd0_accum8_dsCrossVul", "vulberta_CWE-79_bs1_ep3_lr1e-05_wd0_accum8_dsNoRename_CWE-79"]
+>>>>>>> Stashed changes
 
 if not os.path.exists(MODELS_TO_EVALUATE_DIR) or not os.listdir(MODELS_TO_EVALUATE_DIR):
     print(f"Model directory {MODELS_TO_EVALUATE_DIR} is empty or does not exist. No models to evaluate.")
